@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StoryPad - Where Stories Come Alive</title>
+  <link rel="stylesheet" href="dist/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    /* Ensure no forced login/signup popup */
+    .mobile-menu {
+      display: none !important; /* Only show when explicitly toggled */
+    }
+    .mobile-menu.active {
+      display: flex !important;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <!-- Navigation -->
+  <header class="bg-gradient-to-r from-dark to-primary-dark text-white shadow-md">
+    <div class="container mx-auto px-4 py-3">
+      <nav class="flex justify-between items-center">
+        <div class="flex items-center">
+          <a href="#" class="text-2xl font-bold">StoryPad</a>
+        </div>
+        <div class="flex items-center space-x-4">
+          <div class="relative hidden md:block">
+            <input type="text" placeholder="Search stories..." class="py-1 px-3 pr-8 rounded-full text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary">
+            <button class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500">
+              <i class="fas fa-search text-xs"></i>
+            </button>
+          </div>
+          <a href="#" class="btn btn-secondary">Sign In</a>
+          <a href="#" class="btn btn-primary">Sign Up</a>
+          <button class="md:hidden text-xl menu-toggle">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Mobile Menu Overlay (controlled by JS) -->
+  <div class="mobile-menu fixed inset-0 bg-dark/90 z-50 flex-col items-center justify-center text-white">
+    <button class="absolute top-4 right-4 text-2xl text-white close-menu-btn">
+      <i class="fas fa-times"></i>
+    </button>
+    <h2 class="text-3xl font-bold mb-8">StoryPad</h2>
+    <div class="flex flex-col space-y-6 text-xl">
+      <a href="#" class="hover:text-gray-300 transition-colors">Sign In</a>
+      <a href="#" class="btn btn-primary">Sign Up</a>
+    </div>
+  </div>
+
+  <!-- Rest of the content unchanged -->
+  <!-- Hero Section -->
+  <section class="bg-gradient-to-br from-primary/90 to-secondary/90 text-white py-16 md:py-24">
+    <!-- Rest of the content... -->
+    <div class="container mx-auto px-4">
+      <div class="grid md:grid-cols-2 gap-8 items-center">
+        <div>
+          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">Discover Your Next Great Story</h1>
+          <p class="text-lg md:text-xl mb-8 text-gray-100">Join a community of millions of readers and writers sharing original stories. Find what moves you.</p>
+          <div class="flex flex-col sm:flex-row gap-4">
+            <a href="#" class="btn bg-white text-primary font-bold hover:bg-gray-100">Start Reading</a>
+            <a href="#" class="btn border border-white hover:bg-white/10">Start Writing</a>
+          </div>
+        </div>
+        <div class="hidden md:block relative">
+          <img src="https://ext.same-assets.com/4019447629/1820759315.png" alt="Devices showing StoryPad" class="ml-auto">
+          <div class="absolute -bottom-6 -left-6 bg-accent/90 p-4 rounded-lg shadow-lg">
+            <p class="font-bold text-lg">89+ Million</p>
+            <p class="text-sm opacity-90">readers & writers</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+      <h2 class="section-title text-center">See Your Story...</h2>
+      <div class="grid md:grid-cols-3 gap-8 mt-12">
+        <div class="text-center">
+          <div class="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-film text-primary text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Get Produced</h3>
+          <p class="text-gray-600">Have your story adapted to film with our studio partnerships</p>
+        </div>
+        <div class="text-center">
+          <div class="bg-secondary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-tv text-secondary text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Get Adapted</h3>
+          <p class="text-gray-600">See your stories come to life as streaming TV series</p>
+        </div>
+        <div class="text-center">
+          <div class="bg-accent/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-book text-accent text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Get Published</h3>
+          <p class="text-gray-600">Find publishing opportunities with major publishers</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Stories Section -->
+  <section class="py-16 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="section-title mb-0">Featured Stories</h2>
+        <a href="#" class="text-primary hover:text-primary-dark font-medium">See More</a>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Story Card 1 -->
+        <div class="card card-hover">
+          <div class="h-48 bg-gray-200 relative">
+            <img src="images/fantasy-card.jpg" alt="Story Cover" class="w-full h-full object-cover">
+            <div class="absolute top-2 right-2 bg-secondary text-white text-xs py-1 px-2 rounded">Fantasy</div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-bold text-lg mb-1">The Last Kingdom</h3>
+            <p class="text-sm text-gray-500 mb-2">by Alex Rivers</p>
+            <div class="flex items-center text-sm text-gray-600 mb-3">
+              <i class="fas fa-eye mr-1"></i> 2.5M
+              <i class="fas fa-star ml-3 mr-1 text-yellow-500"></i> 4.8
+              <i class="fas fa-comment ml-3 mr-1"></i> 15.4K
+            </div>
+            <p class="text-sm text-gray-600 line-clamp-2">A young warrior must reclaim his homeland from dark forces that threaten to destroy everything he loves.</p>
+          </div>
+        </div>
+
+        <!-- Story Card 2 -->
+        <div class="card card-hover">
+          <div class="h-48 bg-gray-200 relative">
+            <img src="images/romance-card.jpg" alt="Story Cover" class="w-full h-full object-cover">
+            <div class="absolute top-2 right-2 bg-pink-500 text-white text-xs py-1 px-2 rounded">Romance</div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-bold text-lg mb-1">When Stars Align</h3>
+            <p class="text-sm text-gray-500 mb-2">by Sophia Chen</p>
+            <div class="flex items-center text-sm text-gray-600 mb-3">
+              <i class="fas fa-eye mr-1"></i> 3.7M
+              <i class="fas fa-star ml-3 mr-1 text-yellow-500"></i> 4.9
+              <i class="fas fa-comment ml-3 mr-1"></i> 24.2K
+            </div>
+            <p class="text-sm text-gray-600 line-clamp-2">Two strangers meet by chance and discover their lives have been intertwined in ways they never imagined.</p>
+          </div>
+        </div>
+
+        <!-- Story Card 3 -->
+        <div class="card card-hover">
+          <div class="h-48 bg-gray-200 relative">
+            <img src="images/scifi-card.jpg" alt="Story Cover" class="w-full h-full object-cover">
+            <div class="absolute top-2 right-2 bg-blue-500 text-white text-xs py-1 px-2 rounded">Sci-Fi</div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-bold text-lg mb-1">Neural Connection</h3>
+            <p class="text-sm text-gray-500 mb-2">by James Wilson</p>
+            <div class="flex items-center text-sm text-gray-600 mb-3">
+              <i class="fas fa-eye mr-1"></i> 1.8M
+              <i class="fas fa-star ml-3 mr-1 text-yellow-500"></i> 4.6
+              <i class="fas fa-comment ml-3 mr-1"></i> 9.7K
+            </div>
+            <p class="text-sm text-gray-600 line-clamp-2">In a world where minds can connect digitally, one glitch in the system threatens humanity's future.</p>
+          </div>
+        </div>
+
+        <!-- Story Card 4 -->
+        <div class="card card-hover">
+          <div class="h-48 bg-gray-200 relative">
+            <img src="images/mystery-card.jpg" alt="Story Cover" class="w-full h-full object-cover">
+            <div class="absolute top-2 right-2 bg-purple-500 text-white text-xs py-1 px-2 rounded">Mystery</div>
+          </div>
+          <div class="p-4">
+            <h3 class="font-bold text-lg mb-1">Silent Secrets</h3>
+            <p class="text-sm text-gray-500 mb-2">by Morgan Lee</p>
+            <div class="flex items-center text-sm text-gray-600 mb-3">
+              <i class="fas fa-eye mr-1"></i> 2.1M
+              <i class="fas fa-star ml-3 mr-1 text-yellow-500"></i> 4.7
+              <i class="fas fa-comment ml-3 mr-1"></i> 12.3K
+            </div>
+            <p class="text-sm text-gray-600 line-clamp-2">A small town detective uncovers a conspiracy that goes back generations in this thrilling mystery.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+      <h2 class="section-title text-center">How StoryPad Works</h2>
+      <p class="text-center text-gray-600 max-w-3xl mx-auto mb-12">Discover stories, connect with writers, and share your own creations with our global community.</p>
+
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="relative">
+          <div class="bg-primary-dark rounded-full w-12 h-12 flex items-center justify-center text-white font-bold text-xl mb-6">1</div>
+          <h3 class="text-xl font-bold mb-2">Create</h3>
+          <p class="text-gray-600">Share your unique voice and original story. Use our writing tools to craft a story only you can tell.</p>
+        </div>
+
+        <div class="relative">
+          <div class="bg-secondary rounded-full w-12 h-12 flex items-center justify-center text-white font-bold text-xl mb-6">2</div>
+          <h3 class="text-xl font-bold mb-2">Build</h3>
+          <p class="text-gray-600">Establish a global fan base as your story gains readership. Connect with other writers through storytelling.</p>
+        </div>
+
+        <div class="relative">
+          <div class="bg-accent rounded-full w-12 h-12 flex items-center justify-center text-white font-bold text-xl mb-6">3</div>
+          <h3 class="text-xl font-bold mb-2">Amplify</h3>
+          <p class="text-gray-600">Get your story published or adapted into film or television with our professional partnerships.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonial Section -->
+  <section class="py-16 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <h2 class="section-title text-center mb-12">Success Stories</h2>
+
+      <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 max-w-4xl mx-auto">
+        <div class="flex flex-col md:flex-row gap-6">
+          <div class="md:w-1/3">
+            <img src="images/author-card.jpg" alt="Author" class="rounded-lg w-full h-64 md:h-auto object-cover">
+          </div>
+          <div class="md:w-2/3">
+            <div class="mb-4">
+              <i class="fas fa-quote-left text-3xl text-gray-300"></i>
+            </div>
+            <p class="text-gray-700 text-lg mb-6">Working with StoryPad has been incredible. They not only care about your success but also stay true to your creative vision. My series is now being adapted for streaming, and I couldn't be happier!</p>
+            <div>
+              <p class="font-bold text-lg">Kara Winters</p>
+              <p class="text-gray-500">Author of "Midnight Chronicles"</p>
+              <div class="flex items-center mt-2">
+                <div class="flex">
+                  <i class="fas fa-star text-yellow-400"></i>
+                  <i class="fas fa-star text-yellow-400"></i>
+                  <i class="fas fa-star text-yellow-400"></i>
+                  <i class="fas fa-star text-yellow-400"></i>
+                  <i class="fas fa-star text-yellow-400"></i>
+                </div>
+                <span class="ml-2 text-sm text-gray-500">Over 5M reads on StoryPad</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Get Discovered Section -->
+  <section class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+      <h2 class="section-title text-center">Get Discovered</h2>
+
+      <div class="grid md:grid-cols-3 gap-8 mt-8">
+        <div class="card card-hover">
+          <img src="images/writing-card.jpg" alt="Writing Contests" class="w-full h-48 object-cover">
+          <div class="p-6">
+            <h3 class="font-bold text-xl mb-2">Writing Contests</h3>
+            <p class="text-gray-600 mb-4">Enter writing contests to get published, win awards, and partner with global brands.</p>
+            <a href="#" class="text-primary font-medium hover:text-primary-dark flex items-center">
+              Learn more <i class="fas fa-arrow-right ml-1 text-sm"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="card card-hover">
+          <img src="images/awards-card.jpg" alt="Annual Awards" class="w-full h-48 object-cover">
+          <div class="p-6">
+            <h3 class="font-bold text-xl mb-2">The Padies</h3>
+            <p class="text-gray-600 mb-4">Our annual awards program celebrating the best stories from around the world.</p>
+            <a href="#" class="text-primary font-medium hover:text-primary-dark flex items-center">
+              Learn more <i class="fas fa-arrow-right ml-1 text-sm"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="card card-hover">
+          <img src="images/books-featured.jpg" alt="Featured List" class="w-full h-48 object-cover">
+          <div class="p-6">
+            <h3 class="font-bold text-xl mb-2">StoryPad Picks</h3>
+            <p class="text-gray-600 mb-4">Get featured on our hand-picked reading list and gain massive exposure.</p>
+            <a href="#" class="text-primary font-medium hover:text-primary-dark flex items-center">
+              Learn more <i class="fas fa-arrow-right ml-1 text-sm"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-16 bg-gradient-to-r from-secondary to-primary text-white">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">Take StoryPad With You</h2>
+      <p class="text-lg md:text-xl mb-8 max-w-2xl mx-auto">Read and write anywhere, even offline. Join the largest storytelling community today.</p>
+      <div class="flex flex-col sm:flex-row justify-center gap-4">
+        <a href="#" class="btn bg-white text-primary hover:bg-gray-100 font-medium">Start Reading</a>
+        <a href="#" class="btn border border-white hover:bg-white/10">Start Writing</a>
+      </div>
+      <div class="mt-12">
+        <img src="https://ext.same-assets.com/4019447629/1820759315.png" alt="Devices with StoryPad" class="max-w-2xl mx-auto">
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-white py-12">
+    <div class="container mx-auto px-4">
+      <div class="grid md:grid-cols-4 gap-8">
+        <div>
+          <h3 class="text-xl font-bold mb-4">StoryPad</h3>
+          <p class="text-gray-400 mb-4">The world's largest storytelling community where stories come alive.</p>
+          <div class="flex space-x-4">
+            <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-youtube"></i></a>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-bold mb-4">Explore</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="text-gray-400 hover:text-white">Categories</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Popular</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">New Releases</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Writers</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Featured</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold mb-4">Resources</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="text-gray-400 hover:text-white">Writer's Guide</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Help Center</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Community Guidelines</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Writing Contests</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Brand Partnerships</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold mb-4">Legal</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="text-gray-400 hover:text-white">Terms of Service</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Privacy Policy</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Copyright Policy</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Accessibility</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Cookie Policy</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500">
+        <p>&copy; 2025 StoryPad. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
