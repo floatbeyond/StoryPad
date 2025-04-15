@@ -26,7 +26,7 @@ StoryPad is a responsive web platform for storytelling, connecting writers with 
 
 1. Clone the repository
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/floatbeyond/StoryPad.git
 cd storypad
 ```
 
