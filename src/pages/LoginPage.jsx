@@ -1,6 +1,33 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const LoginPage = () => {
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError(null);
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    try {
+      const response = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        localStorage.setItem("username", result.username); // Save username from backend
+        navigate("/");
+      } else {
+        setError(result.message || "Login failed");
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-storypad-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
@@ -23,7 +50,7 @@ const LoginPage = () => {
             </Link>
           </p>
         </div>
-        <form className="mt-8 space-y-6">
+        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           <div className="space-y-4">
             <div>
               <label
@@ -86,6 +113,8 @@ const LoginPage = () => {
               </Link>
             </div>
           </div>
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
 
           <div>
             <button type="submit" className="btn-primary w-full py-3">

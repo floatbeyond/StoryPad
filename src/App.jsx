@@ -8,7 +8,7 @@ import BrowsePage from './pages/BrowsePage';
 import CommunityPage from './pages/CommunityPage';
 import WritePage from './pages/WritePage';
 
-function App() {
+function App() { //handle the main application logic and routing
   return (
     <Routes>
       {/* Auth Pages (no MainLayout) */}

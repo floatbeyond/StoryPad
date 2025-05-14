@@ -2,6 +2,7 @@
   "name": "storypad",
   "private": true,
   "version": "0.0.0",
+  "proxy": "http://localhost:5000",
   "type": "module",
   "scripts": {
     "frontend": "vite --host 0.0.0.0",
@@ -10,9 +11,11 @@
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.16",
+    "bcrypt": "^6.0.0",
     "dotenv": "^16.5.0",
+    "express": "^5.1.0",
     "mongodb": "^6.16.0",
-    "mongoose": "^8.14.1",
+    "mongoose": "^8.14.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.5.0",

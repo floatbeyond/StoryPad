@@ -1,7 +1,42 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 const SignupPage = () => {
-  return (
+  const [error, setError] = useState(null);  //shown when signup fails + hook
+  const [success, setSuccess] = useState(null); //shown when signup is successful
+  const navigate = useNavigate();
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    const formData = new FormData(e.target); //get the data from the form
+    const data = Object.fromEntries(formData.entries()); //convert the form data to an object
+
+    try {
+      const response = await fetch('http://localhost:5000/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSuccess('Account created successfully!');
+        localStorage.setItem('username', data.username); // Save username
+        setTimeout(() => navigate('/'), 1000); // Redirect to home after 1s
+        e.target.reset();
+      } else {
+        setError(result.message || 'Failed to create account');
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+    }
+  };
+
+  return ( //how the signup page looks
     <div className="min-h-screen bg-storypad-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
         <div className="text-center mb-6">
@@ -17,7 +52,8 @@ const SignupPage = () => {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6">
+        
+        <form className="mt-8 space-y-6" onSubmit={handleSignup}> 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -26,7 +62,7 @@ const SignupPage = () => {
                 </label>
                 <input
                   id="first-name"
-                  name="first-name"
+                  name="firstName"
                   type="text"
                   autoComplete="given-name"
                   required
@@ -40,7 +76,7 @@ const SignupPage = () => {
                 </label>
                 <input
                   id="last-name"
-                  name="last-name"
+                  name="lastName"
                   type="text"
                   autoComplete="family-name"
                   required
@@ -104,7 +140,7 @@ const SignupPage = () => {
               </label>
               <input
                 id="confirm-password"
-                name="confirm-password"
+                name="confirmPassword"
                 type="password"
                 autoComplete="new-password"
                 required
@@ -134,6 +170,9 @@ const SignupPage = () => {
             </label>
           </div>
 
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {success && <p className="text-green-500 text-sm">{success}</p>}
+
           <div>
             <button
               type="submit"
@@ -143,49 +182,6 @@ const SignupPage = () => {
             </button>
           </div>
         </form>
-
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-storypad-text-light">Or continue with</span>
-            </div>
-          </div>
-
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              className="w-full py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-storypad-dark hover:bg-gray-50"
-            >
-              <div className="flex items-center justify-center">
-                <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fillRule="evenodd"
-                    d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span>Facebook</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              className="w-full py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-storypad-dark hover:bg-gray-50"
-            >
-              <div className="flex items-center justify-center">
-                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path
-                    d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                  />
-                </svg>
-                <span>Google</span>
-              </div>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
