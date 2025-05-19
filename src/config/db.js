@@ -1,15 +1,26 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// רק אם את עובדת עם ESM (import/export)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// נתיב מוחלט אל קובץ .env בתיקיית הפרויקט הראשית
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
 
 async function connectToMongo() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ Connected to MongoDB Atlas!');
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error.message);
-    process.exit(1);
-  }
-}
+    const uri = process.env.MONGODB_URI
+      .replace('<USERNAME>', process.env.MONGO_USER)
+      .replace('<PASSWORD>', process.env.MONGO_PASSWORD);
 
-export default connectToMongo;
+    const conn = await mongoose.connect(uri);
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error(` MongoDB Connection Error: ${error.message}`);
+    throw error;
+  }
+};
