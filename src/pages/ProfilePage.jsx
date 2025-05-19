@@ -1,35 +1,35 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const ProfilePage = () => {
   const [userData, setUserData] = useState(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
+    // כאן אתה יכול למשוך נתונים מהשרת לפי ה-username השמור בלוקל סטורג'
     const username = localStorage.getItem("username");
-    if (!username) {
-      // אין משתמש מחובר → הפנייה לדף login
-      navigate("/login");
-      return;
+    if (username) {
+      // סימולציה לנתונים
+      setUserData({
+        username,
+        fullName: "Alex Johnson",
+        email: "alex@example.com",
+        bio: "Fantasy and sci-fi writer. Dreaming across timelines. 📚✨",
+        profileImage:
+          "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&q=80",
+        joined: "2023-08-01",
+        storiesCount: 4,
+        followers: 198,
+        likes: 4235,
+      });
     }
-
-    // משתמש קיים → נטען פרטי פרופיל
-    setUserData({
-      username: username,
-      fullName: "Jan Salameh",
-      email: "majd@example.com",
-      bio: "Storyteller at heart. Writing words that paint emotions and spark imagination.",
-      profileImage:
-        "https://images.unsplash.com/photo-1502685104226-ee32379fefbe?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      joined: "2025-01-01",
-      storiesCount: 7,
-      followers: 320,
-      likes: 1850,
-    });
-  }, [navigate]);
+  }, []);
 
   if (!userData) {
-    return null; // מחכה להפנייה או לטעינת נתונים
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-storypad-background text-white">
+        <p>Loading profile...</p>
+      </div>
+    );
   }
 
   return (
@@ -53,7 +53,7 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-3 gap-4 mt-8 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 text-center">
           <div>
             <p className="text-xl font-bold text-storypad-primary">
               {userData.storiesCount}
@@ -72,15 +72,22 @@ const ProfilePage = () => {
             </p>
             <p className="text-storypad-text">Likes</p>
           </div>
+          <div>
+            <Link
+              to="/edit-profile"
+              className="text-sm text-storypad-primary hover:underline"
+            >
+              Edit Profile
+            </Link>
+          </div>
         </div>
 
+        {/* Placeholder: User's Stories */}
         <div className="mt-10">
           <h2 className="text-2xl font-semibold text-storypad-dark mb-4">
             Your Stories
           </h2>
-          <p className="text-storypad-text-light">
-            This is where your stories will appear. Start writing now!
-          </p>
+          <p className="text-storypad-text-light">Coming soon: List of your stories with edit options.</p>
         </div>
       </div>
     </div>
@@ -88,3 +95,4 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
+

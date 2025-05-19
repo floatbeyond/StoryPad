@@ -10,7 +10,6 @@ const Navbar = () => {
     setUsername(localStorage.getItem('username'));
   }, []);
 
-  // Listen for changes to localStorage (e.g., logout in another tab)
   useEffect(() => {
     const handleStorage = () => setUsername(localStorage.getItem('username'));
     window.addEventListener('storage', handleStorage);
@@ -25,12 +24,14 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar sticky top-0 z-10">
+    <nav className="navbar sticky top-0 z-10 bg-white border-b shadow-sm">
       <div className="container-custom">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center py-3">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <span className="text-2xl font-bold text-storypad-primary">Story<span className="text-storypad-accent">Pad</span></span>
+            <span className="text-2xl font-bold text-storypad-primary">
+              Story<span className="text-storypad-accent">Pad</span>
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -41,11 +42,12 @@ const Navbar = () => {
             <Link to="/write" className="text-storypad-text hover:text-storypad-primary transition-colors">Write</Link>
           </div>
 
-          {/* Auth Buttons or Greeting - Desktop */}
+          {/* Desktop Auth/Profile Buttons */}
           <div className="hidden md:flex space-x-4 items-center">
             {username ? (
               <>
-                <span className="text-storypad-primary font-semibold">Hello {username} !</span>
+                <span className="text-storypad-primary font-semibold">Hello {username}!</span>
+                <Link to="/profile" className="btn-secondary">Profile</Link>
                 <button onClick={handleLogout} className="btn-secondary ml-2">Logout</button>
               </>
             ) : (
@@ -69,22 +71,24 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-4">
+          <div className="md:hidden mt-2 pb-4">
             <div className="flex flex-col space-y-3">
-              <Link to="/browse" className="text-storypad-text hover:text-storypad-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Browse</Link>
-              <Link to="/categories" className="text-storypad-text hover:text-storypad-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Categories</Link>
-              <Link to="/community" className="text-storypad-text hover:text-storypad-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Community</Link>
-              <Link to="/write" className="text-storypad-text hover:text-storypad-primary transition-colors py-2" onClick={() => setIsMenuOpen(false)}>Write</Link>
-              <div className="flex space-x-4 mt-2">
+              <Link to="/browse" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}>Browse</Link>
+              <Link to="/categories" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}>Categories</Link>
+              <Link to="/community" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}>Community</Link>
+              <Link to="/write" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}>Write</Link>
+
+              <div className="flex flex-col space-y-2 mt-4">
                 {username ? (
                   <>
-                    <span className="text-storypad-primary font-semibold flex-1 text-center">Hello {username}</span>
-                    <button onClick={handleLogout} className="btn-secondary flex-1 text-center">Logout</button>
+                    <span className="text-storypad-primary font-semibold text-center">Hello {username}</span>
+                    <Link to="/profile" className="btn-secondary text-center" onClick={() => setIsMenuOpen(false)}>Profile</Link>
+                    <button onClick={handleLogout} className="btn-secondary text-center">Logout</button>
                   </>
                 ) : (
                   <>
-                    <Link to="/login" className="btn-secondary flex-1 text-center" onClick={() => setIsMenuOpen(false)}>Log In</Link>
-                    <Link to="/signup" className="btn-primary flex-1 text-center" onClick={() => setIsMenuOpen(false)}>Sign Up</Link>
+                    <Link to="/login" className="btn-secondary text-center" onClick={() => setIsMenuOpen(false)}>Log In</Link>
+                    <Link to="/signup" className="btn-primary text-center" onClick={() => setIsMenuOpen(false)}>Sign Up</Link>
                   </>
                 )}
               </div>

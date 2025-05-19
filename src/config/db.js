@@ -1,18 +1,15 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-
 dotenv.config();
 
-export const connectDB = async () => {
+async function connectToMongo() {
   try {
-    const uri = process.env.MONGODB_URI
-      .replace('<USERNAME>', process.env.MONGO_USER)
-      .replace('<PASSWORD>', process.env.MONGO_PASSWORD);
-
-    const conn = await mongoose.connect(uri);
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('✅ Connected to MongoDB Atlas!');
   } catch (error) {
-    console.error(`MongoDB Connection Error: ${error.message}`);
-    throw error;
+    console.error('❌ MongoDB connection error:', error.message);
+    process.exit(1);
   }
-};
+}
+
+export default connectToMongo;
