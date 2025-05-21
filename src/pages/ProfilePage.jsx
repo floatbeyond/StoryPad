@@ -24,6 +24,7 @@ const ProfilePage = () => {
     }
   }, []);
 
+  
   if (!userData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-storypad-background text-white">

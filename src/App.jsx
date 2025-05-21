@@ -1,90 +1,37 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Routes, Route } from 'react-router-dom';
+import MainLayout from './layouts/MainLayout';
+import HomePage from './pages/HomePage';
+import StoryPage from './pages/StoryPage';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import BrowsePage from './pages/BrowsePage';
+import CommunityPage from './pages/CommunityPage';
+import WritePage from './pages/WritePage';
+import ProfilePage from './pages/ProfilePage';
 
-const ProfilePage = () => {
-  const [userData, setUserData] = useState(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const username = localStorage.getItem("username");
-    if (!username) {
-      // אין משתמש מחובר → הפנייה לדף login
-      navigate("/login");
-      return;
-    }
-
-    // משתמש קיים → נטען פרטי פרופיל
-    setUserData({
-      username: username,
-      fullName: "Jan Salameh",
-      email: "majd@example.com",
-      bio: "Storyteller at heart. Writing words that paint emotions and spark imagination.",
-      profileImage:
-        "https://images.unsplash.com/photo-1502685104226-ee32379fefbe?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      joined: "2025-01-01",
-      storiesCount: 7,
-      followers: 320,
-      likes: 1850,
-    });
-  }, [navigate]);
-
-  if (!userData) {
-    return null; // מחכה להפנייה או לטעינת נתונים
-  }
-
+function App() {
   return (
-    <div className="min-h-screen bg-storypad-background py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
-        <div className="flex flex-col md:flex-row items-center gap-6">
-          <img
-            src={userData.profileImage}
-            alt={userData.fullName}
-            className="w-32 h-32 rounded-full object-cover shadow"
-          />
-          <div className="text-center md:text-left">
-            <h1 className="text-3xl font-bold text-storypad-dark">
-              {userData.fullName}
-            </h1>
-            <p className="text-storypad-text-light">@{userData.username}</p>
-            <p className="mt-2 text-storypad-text">{userData.bio}</p>
-            <p className="text-sm text-gray-400 mt-1">
-              Joined: {new Date(userData.joined).toLocaleDateString()}
-            </p>
-          </div>
-        </div>
+    <Routes>
+      {/* Auth Pages (no MainLayout) */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
 
-        <div className="grid grid-cols-3 sm:grid-cols-3 gap-4 mt-8 text-center">
-          <div>
-            <p className="text-xl font-bold text-storypad-primary">
-              {userData.storiesCount}
-            </p>
-            <p className="text-storypad-text">Stories</p>
+      {/* Main Layout Pages */}
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/stories/:id" element={<StoryPage />} />
+        <Route path="/browse" element={<BrowsePage />} />
+        <Route path="/community" element={<CommunityPage />} />
+        <Route path="/write" element={<WritePage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="*" element={
+          <div className="container-custom py-20 text-center">
+            <h1 className="text-2xl font-bold">Page Not Found</h1>
           </div>
-          <div>
-            <p className="text-xl font-bold text-storypad-primary">
-              {userData.followers}
-            </p>
-            <p className="text-storypad-text">Followers</p>
-          </div>
-          <div>
-            <p className="text-xl font-bold text-storypad-primary">
-              {userData.likes}
-            </p>
-            <p className="text-storypad-text">Likes</p>
-          </div>
-        </div>
-
-        <div className="mt-10">
-          <h2 className="text-2xl font-semibold text-storypad-dark mb-4">
-            Your Stories
-          </h2>
-          <p className="text-storypad-text-light">
-            This is where your stories will appear. Start writing now!
-          </p>
-        </div>
-      </div>
-    </div>
+        } />
+      </Route>
+    </Routes>
   );
-};
+}
 
-export default ProfilePage;
+export default App;
