@@ -19,6 +19,7 @@ const LoginPage = () => {
       const result = await response.json();
       if (response.ok) {
         localStorage.setItem("username", result.username); // Save username from backend
+        localStorage.setItem("token", result.token); // Save token from backend
         navigate("/");
       } else {
         setError(result.message || "Login failed");

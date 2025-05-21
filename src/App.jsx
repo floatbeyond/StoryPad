@@ -6,8 +6,10 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import BrowsePage from './pages/BrowsePage';
 import CommunityPage from './pages/CommunityPage';
-import WritePage from './pages/WritePage';
+import NewWritePage from './pages/NewWritePage';
+import MyStoriesPage from './pages/MyStoriesPage';
 import ProfilePage from './pages/ProfilePage';
+import WritePage from './pages/WritePage';
 
 function App() {
   return (
@@ -22,8 +24,10 @@ function App() {
         <Route path="/stories/:id" element={<StoryPage />} />
         <Route path="/browse" element={<BrowsePage />} />
         <Route path="/community" element={<CommunityPage />} />
-        <Route path="/write" element={<WritePage />} />
+        <Route path="/newwrite" element={<NewWritePage />} />
+        <Route path="/mystories" element={<MyStoriesPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/write" element={<WritePage />} />
         <Route path="*" element={
           <div className="container-custom py-20 text-center">
             <h1 className="text-2xl font-bold">Page Not Found</h1>

@@ -1,43 +1,78 @@
+import { useState } from "react";
+
 const WritePage = () => {
+  const [chapters, setChapters] = useState([
+    { title: "", content: "" }
+  ]);
+
+  const handleChapterChange = (idx, field, value) => {
+    const updated = chapters.map((ch, i) =>
+      i === idx ? { ...ch, [field]: value } : ch
+    );
+    setChapters(updated);
+  };
+
+  const addChapter = () => {
+    setChapters([...chapters, { title: "", content: "" }]);
+  };
+
+  const handleSave = () => {
+    // כאן אפשר להוסיף לוגיקה לשמירה
+    alert("Story saved!");
+  };
+
+  const handlePublish = () => {
+    // כאן אפשר להוסיף לוגיקה לפרסום
+    alert("Story published!");
+  };
+
   return (
     <div className="container-custom py-12">
-      <h1 className="text-3xl font-bold text-storypad-dark mb-6">Start Writing Your Story</h1>
-      <form className="space-y-6">
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-storypad-dark">Story Title</label>
-          <input
-            id="title"
-            name="title"
-            type="text"
-            required
-            className="input w-full mt-1"
-            placeholder="Enter your story title"
-          />
-        </div>
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-storypad-dark">Description</label>
+      <h1 className="text-3xl font-bold text-storypad-dark mb-6">Write Your Story</h1>
+      {chapters.map((chapter, idx) => (
+        <div key={idx} className="mb-8 p-4 bg-white rounded-lg shadow">
+          <label className="block text-sm font-medium text-storypad-dark mb-2">
+            Chapter Title
+            <input
+              type="text"
+              className="input w-full mt-1"
+              placeholder={`Enter chapter ${idx + 1} title`}
+              value={chapter.title}
+              onChange={e => handleChapterChange(idx, "title", e.target.value)}
+            />
+          </label>
           <textarea
-            id="description"
-            name="description"
-            rows="4"
-            required
-            className="input w-full mt-1"
-            placeholder="Write a brief description of your story"
+            className="input w-full mt-3"
+            rows={8}
+            placeholder={`Write chapter ${idx + 1} content...`}
+            value={chapter.content}
+            onChange={e => handleChapterChange(idx, "content", e.target.value)}
           />
         </div>
-        <div>
-          <label htmlFor="content" className="block text-sm font-medium text-storypad-dark">Story Content</label>
-          <textarea
-            id="content"
-            name="content"
-            rows="10"
-            required
-            className="input w-full mt-1"
-            placeholder="Start writing your story here..."
-          />
-        </div>
-        <button type="submit" className="btn-primary w-full py-3">Publish Story</button>
-      </form>
+      ))}
+      <button
+        type="button"
+        className="btn-secondary mb-6"
+        onClick={addChapter}
+      >
+        Add Chapter
+      </button>
+      <div className="flex gap-4">
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={handleSave}
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          className="btn-accent"
+          onClick={handlePublish}
+        >
+          Publish
+        </button>
+      </div>
     </div>
   );
 };

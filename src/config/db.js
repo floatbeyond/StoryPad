@@ -3,17 +3,16 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-async function connectToMongo() {
+export const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('✅ Connected to MongoDB Atlas!');
-  } catch (err) {
-    console.error('❌ MongoDB connection error:', err.message);
-    process.exit(1);
-  }
-}
+    const uri = process.env.MONGODB_URI
+      .replace('<USERNAME>', process.env.MONGO_USER)
+      .replace('<PASSWORD>', process.env.MONGO_PASSWORD);
 
-export default connectToMongo;
+    const conn = await mongoose.connect(uri);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error(`MongoDB Connection Error: ${error.message}`);
+    throw error;
+  }
+};

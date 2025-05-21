@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 const FeaturedStory = ({ title, author, cover, tags, likes, reads }) => (
   <div className="card hover:shadow-lg transition-shadow">
@@ -61,6 +62,17 @@ const StoryCard = ({ title, author, cover, description, likes, reads }) => (
 );
 
 const HomePage = () => {
+    const navigate = useNavigate();
+  const isLoggedIn = !!localStorage.getItem("token"); // בדיקה פשוטה
+  const [showOptions, setShowOptions] = useState(false);
+
+  const handleStartWriting = () => {
+    if (!isLoggedIn) {
+      navigate("/signup");
+    } else {
+      setShowOptions(true);
+    }
+  };
   // Dummy data for featured stories
   const featuredStories = [
     {
@@ -143,13 +155,30 @@ const HomePage = () => {
               StoryPad is the home for great stories and the people who write them. Join our community of storytellers.
             </p>
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-              <Link to="/signup" className="bg-storypad-accent hover:bg-opacity-90 text-white px-6 py-3 rounded-lg font-medium text-center">
+              <button
+                onClick={handleStartWriting}
+                className="bg-storypad-accent hover:bg-opacity-90 text-white px-6 py-3 rounded-lg font-medium text-center"
+              >
                 Start Writing
-              </Link>
+              </button>
               <Link to="/browse" className="bg-white hover:bg-opacity-90 text-storypad-primary px-6 py-3 rounded-lg font-medium text-center">
                 Start Reading
               </Link>
-            </div>
+            </div>            
+            {/* Modal קטן עם שתי אפשרויות */}
+            {showOptions && (
+              <div className="mt-6 bg-white rounded-lg shadow-lg p-6 flex flex-col space-y-4 text-storypad-dark">
+                <button className="btn-primary" onClick={() => navigate("/newWrite")}>
+                  Start a new story
+                </button>
+                <button className="btn-secondary" onClick={() => navigate("/mystories")}>
+                  My stories
+                </button>
+                <button className="text-red-500 mt-2" onClick={() => setShowOptions(false)}>
+                  סגור
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
