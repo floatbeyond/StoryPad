@@ -311,12 +311,10 @@ const StoryPage = () => {
               {/* In a production app, we would use a proper sanitized HTML or markdown parser */}
               <div className="prose max-w-none mt-6">
                 <p className="text-storypad-text-light italic mb-6">
-                  Note: In a real application, we would use a proper HTML sanitizer or Markdown parser here.
-                  For brevity in this prototype, the story content is omitted. The actual implementation would
-                  display the chapter content safely.
+                  create middleware+token
                 </p>
                 <p className="text-storypad-text">
-                  {currentChapter.content.substring(0, 300).replace(/<[^>]*>?/gm, '')}...
+                  create middleware+token
                 </p>
                 <p className="mt-4">
                   <button className="text-storypad-primary hover:underline">

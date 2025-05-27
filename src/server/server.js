@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import { connectDB } from '../config/db.js';
 import { User } from '../models/User.js';
+import jwt from 'jsonwebtoken';
+import { authenticateToken, SECRET_KEY } from './authMiddleware.js';
 
 const app = express();
 app.use(cors());
@@ -49,14 +51,26 @@ app.post('/api/login', async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
-    // For demo: plain text password check (not secure, but matches your signup logic)
     if (user.password !== password) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
-    res.json({ username: user.username });
+    // Create JWT token
+    const token = jwt.sign({ id: user._id, email: user.email }, SECRET_KEY, { expiresIn: '1h' });
+    res.json({ username: user.username, token });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
+});
+
+// Protected route for full chapter content
+app.get('/api/story/:id/chapter/:chapterId', authenticateToken, async (req, res) => {
+  // For demo, return dummy content. Replace with DB fetch in production.
+  const { id, chapterId } = req.params;
+  // Example dummy content:
+  res.json({
+    chapterId,
+    content: `<p>This is the full content for chapter ${chapterId} of story ${id}.</p>`
+  });
 });
 
 // Ensure the app is exported for use in the server setup
