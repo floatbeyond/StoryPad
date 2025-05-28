@@ -27,7 +27,8 @@ function App() {
         <Route path="/newwrite" element={<NewWritePage />} />
         <Route path="/mystories" element={<MyStoriesPage />} />
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/write" element={<WritePage />} />
+        <Route path="/write" element={<WritePage />} /> {/* new writing*/}
+        <Route path="/write/:storyId" element={<WritePage />} /> {/* cuntinue writing*/}
         <Route path="*" element={
           <div className="container-custom py-20 text-center">
             <h1 className="text-2xl font-bold">Page Not Found</h1>

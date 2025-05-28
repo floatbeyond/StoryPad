@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 
 const chapterSchema = new mongoose.Schema({
-  title:   { type: String, required: true },
-  content: { type: String, required: true }
+  title:    { type: String, required: true },
+  content:  { type: String, required: true },
+  published:{ type: Boolean, default: false } // Published status for the chapter
 });
 
 const storySchema = new mongoose.Schema({
