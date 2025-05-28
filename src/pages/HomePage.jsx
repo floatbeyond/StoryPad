@@ -63,7 +63,7 @@ const StoryCard = ({ title, author, cover, description, likes, reads }) => (
 
 const HomePage = () => {
     const navigate = useNavigate();
-  const isLoggedIn = !!localStorage.getItem("token"); // בדיקה פשוטה
+  const isLoggedIn = !!localStorage.getItem("token"); // Check if user is logged in
   const [showOptions, setShowOptions] = useState(false);
 
   const handleStartWriting = () => {
@@ -175,7 +175,7 @@ const HomePage = () => {
                   My stories
                 </button>
                 <button className="text-red-500 mt-2" onClick={() => setShowOptions(false)}>
-                  סגור
+                  Close
                 </button>
               </div>
             )}
