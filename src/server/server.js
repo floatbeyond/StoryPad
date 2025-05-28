@@ -1,6 +1,7 @@
 import http from 'http';
 import express from 'express';
 import cors from 'cors';
+// import mongoose from 'mongoose'; // Add this import
 import { connectDB } from '../config/db.js';
 import { User } from '../models/User.js';
 import jwt from 'jsonwebtoken';
@@ -9,10 +10,10 @@ import { Story } from '../models/Story.js';
 
 const app = express();
 app.use(cors({
-  origin: 'http://localhost:5186', // הפורט של הקליינט שלך
+  origin: 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Accept']
+  allowedHeaders: ['Content-Type', 'Accept', 'Authorization']
 }));
 app.use(express.json());
 
@@ -49,6 +50,8 @@ app.post('/api/signup', async (req, res) => {
   }
 });
 
+import mongoose from 'mongoose';
+
 // Stories endpoint - Handle story creation
 app.post('/api/stories', async (req, res) => {
   try {
@@ -57,12 +60,17 @@ app.post('/api/stories', async (req, res) => {
     
     const { title, description, category, language } = req.body;
 
-    // Create new story instance
-    const authorId = req.user?._id || '65432109876543210987654321';
+    // Validate required fields
+    if (!title || !description || !category || !language) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // Create a valid ObjectId for author
+    const authorId = req.user?._id || new mongoose.Types.ObjectId();
     console.log('\n Author Details:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(' Author ID:', authorId);
-    console.log('Type:', req.user ? 'Logged In User' : 'Default ID');
+    console.log('Type:', req.user ? 'Logged In User' : 'Default ObjectId');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     const newStory = new Story({
@@ -74,6 +82,7 @@ app.post('/api/stories', async (req, res) => {
       chapters: [],
       published: false
     });
+
     // Save to database
     await newStory.save();
     console.log('✅ Story saved successfully:');
@@ -81,42 +90,29 @@ app.post('/api/stories', async (req, res) => {
     console.log('- Created at:', newStory.createdAt);
 
     // Return success response
-    res.status(201).json({ 
+    res.status(201).json({
       message: 'Story created successfully',
       story: newStory
     });
 
   } catch (error) {
-    console.error('Story creation error:', error);
-    
-    // Handle specific error types
-    if (error.name === 'ValidationError') {
-      // MongoDB validation error (missing required fields or invalid data)
-      return res.status(400).json({ 
-        message: 'Invalid story data', 
-        details: error.errors
-      });
-    }
-
-    if (error.name === 'CastError') {
-      // Invalid MongoDB ID format or other casting issues
-      return res.status(400).json({ 
-        message: 'Invalid data format',
-        details: error.message
-      });
-    }
-
-    if (error.name === 'MongooseError') {
-      // General Mongoose errors
-      return res.status(400).json({ 
-        message: 'Database operation failed',
-        details: error.message
-      });
-    }
-
-    // Default error response for unhandled errors
+    console.error('❌ Error creating story:', error);
     res.status(500).json({ 
-      message: 'Failed to create story',
+      message: 'Failed to create story', 
+      error: error.message 
+    });
+  }
+});
+
+// Get all stories endpoint
+app.get('/api/stories', async (req, res) => {
+  try {
+    const stories = await Story.find().populate('author', 'username firstName lastName');
+    res.json(stories);
+  } catch (error) {
+    console.error('❌ Error fetching stories:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch stories', 
       error: error.message 
     });
   }

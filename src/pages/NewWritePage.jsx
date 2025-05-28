@@ -52,6 +52,10 @@ const NewWritePage = () => {
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
+          // Add this line if you have authentication
+          ...(localStorage.getItem('token') && { 
+            Authorization: `Bearer ${localStorage.getItem('token')}` 
+          })
         },
         credentials: 'include',
         body: JSON.stringify(data),
