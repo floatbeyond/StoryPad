@@ -18,7 +18,11 @@ const server = http.createServer(app);
 // Initialize Socket.io
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",           // Local development  
+      "https://story-pad-two.vercel.app" // Vercel domain
+    ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
   }
@@ -26,7 +30,11 @@ const io = new Server(server, {
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:5173",           // Local development  
+    "https://story-pad-two.vercel.app" // Vercel domain
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Accept', 'Authorization']
