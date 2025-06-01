@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const InvitationsPage = () => {
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +23,7 @@ const InvitationsPage = () => {
       }
 
       console.log('📨 Fetching invitations...');
-      const response = await fetch('http://localhost:5000/api/invitations', {
+      const response = await fetch(`${API_URL}/api/invitations`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -48,7 +50,7 @@ const InvitationsPage = () => {
       const token = localStorage.getItem('token');
       console.log(`📝 Responding to invitation ${invitationId} with: ${response}`);
       
-      const res = await fetch(`http://localhost:5000/api/stories/${storyId}/invitations/${invitationId}`, {
+      const res = await fetch(`${API_URL}/api/stories/${storyId}/invitations/${invitationId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -37,7 +37,8 @@ const CollaborativeEditor = ({
     console.log('🔌 Connecting to Socket.IO...', { storyId, currentUser });
 
     // Connect to WebSocket
-    const newSocket = io('http://localhost:5000', {
+    const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+    const newSocket = io(SOCKET_URL, {
       transports: ['websocket', 'polling']
     });
     

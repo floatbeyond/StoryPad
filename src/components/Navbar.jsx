@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [username, setUsername] = useState(null);
   const [invitationCount, setInvitationCount] = useState(0);
   const navigate = useNavigate();
+  
 
   useEffect(() => {
     setUsername(localStorage.getItem('username'));
@@ -29,7 +32,7 @@ const Navbar = () => {
   const fetchInvitationCount = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/invitations', {
+      const response = await fetch(`${API_URL}/api/invitations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {

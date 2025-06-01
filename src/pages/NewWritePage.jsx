@@ -28,7 +28,8 @@ const NewWritePage = () => {
 
     try {
       // Check if server is available
-      const serverCheck = await fetch("http://localhost:5000");
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const serverCheck = await fetch(API_URL);
       if (!serverCheck.ok) {
         throw new Error("Server is not responding");
       }
@@ -47,7 +48,7 @@ const NewWritePage = () => {
       }
 
       // Send POST request to create story
-      const response = await fetch("http://localhost:5000/api/stories", {
+      const response = await fetch(`${API_URL}/api/stories`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

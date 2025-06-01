@@ -15,7 +15,7 @@ const SignupPage = () => {
     const data = Object.fromEntries(formData.entries()); //convert the form data to an object
 
     try {
-      const response = await fetch('http://localhost:5000/api/signup', {
+      const response = await fetch(`${API_URL}/api/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

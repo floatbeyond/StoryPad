@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import CollaborationPanel from '../components/CollaborationPanel';
 import CollaborativeEditor from '../components/CollaborativeEditor';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const WritePage = () => {
   const { storyId } = useParams();
@@ -42,7 +43,7 @@ const WritePage = () => {
 
         console.log(`Loading story: ${id}`); // Debug log
 
-        const response = await fetch(`http://localhost:5000/api/stories/${id}`, {
+        const response = await fetch(`${API_URL}/api/stories/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

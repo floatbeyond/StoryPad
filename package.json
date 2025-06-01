@@ -7,7 +7,10 @@
   "scripts": {
     "frontend": "vite --host 0.0.0.0",
     "backend": "nodemon src/server/server.js",
-    "dev": "concurrently \"npm run frontend\" \"npm run backend\""
+    "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node src/server/server.js"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.16",
