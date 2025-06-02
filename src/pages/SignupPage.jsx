@@ -25,9 +25,8 @@ const SignupPage = () => {
 
       if (response.ok) {
         setSuccess('Account created successfully!');
-        localStorage.setItem('username', data.username); // Save username
-        setTimeout(() => navigate('/'), 1000); // Redirect to home after 1s
         e.target.reset();
+        // Do NOT redirect or login after signup
       } else {
         setError(result.message || 'Failed to create account');
       }
@@ -173,12 +172,19 @@ const SignupPage = () => {
           {error && <p className="text-red-500 text-sm">{error}</p>}
           {success && <p className="text-green-500 text-sm">{success}</p>}
 
-          <div>
+          <div className="flex gap-4 flex-row-reverse">
             <button
               type="submit"
               className="btn-primary w-full py-3"
             >
               Create account
+            </button>
+            <button
+              type="button"
+              className="btn-accent px-4 py-2 text-sm"
+              onClick={() => navigate('/')}
+            >
+              Back
             </button>
           </div>
         </form>
