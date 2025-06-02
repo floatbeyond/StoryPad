@@ -52,6 +52,10 @@ const NewWritePage = () => {
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
+          // Add this line if you have authentication
+          ...(localStorage.getItem('token') && { 
+            Authorization: `Bearer ${localStorage.getItem('token')}` 
+          })
         },
         credentials: 'include',
         body: JSON.stringify(data),
@@ -60,10 +64,12 @@ const NewWritePage = () => {
       console.log('Server response:', response);
 
       const result = await response.json();
+      console.log('Full result:', result); // Add this debug line
 
       if (response.ok) {
         setSuccess("Story created successfully!");
-        setTimeout(() => navigate("/write"), 500);
+        console.log('Story ID:', result.story?._id); // Add this debug line
+        setTimeout(() => navigate(`/write/${result.story._id}`), 500);
       } else {
         throw new Error(result.message || "Failed to create story");
       }
