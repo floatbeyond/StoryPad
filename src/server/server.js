@@ -128,16 +128,32 @@ app.get('/', (req, res) => {
 
 // Auth endpoints
 app.post('/api/signup', async (req, res) => {
+  console.log('🚀 SIGNUP REQUEST RECEIVED');
+  console.log('Request body:', JSON.stringify(req.body, null, 2));
+  console.log('Request headers:', req.headers);
+  
   try {
     const { firstName, lastName, username, email, password } = req.body;
     
+    console.log('📝 Extracted fields:');
+    console.log('- firstName:', firstName);
+    console.log('- lastName:', lastName);
+    console.log('- username:', username);
+    console.log('- email:', email);
+    console.log('- password length:', password ? password.length : 'undefined');
+    
+    console.log('🔍 Checking for existing user...');
     const existingUser = await User.findOne({ email });
+    
     if (existingUser) {
+      console.log('❌ User already exists with email:', email);
       return res.status(400).json({ 
         success: false, 
         message: 'User already exists' 
       });
     }
+    
+    console.log('✅ No existing user found, creating new user...');
 
     const newUser = new User({
       firstName,
@@ -145,21 +161,27 @@ app.post('/api/signup', async (req, res) => {
       username,
       email,
       password,
-      // Initialize collaboration settings with defaults
       collaborationSettings: {
         allowInvitations: true,
         emailNotifications: true
       }
     });
 
+    console.log('💾 Saving user to database...');
     await newUser.save();
-    console.log('✅ User created with collaboration settings:', newUser.collaborationSettings);
+    console.log('✅ User created successfully:', newUser._id);
     
     res.status(201).json({ 
       success: true, 
       message: 'User created successfully' 
     });
   } catch (error) {
+    console.error('❌ DETAILED SIGNUP ERROR:');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Full error object:', error);
+    
     res.status(500).json({ 
       success: false, 
       message: 'Server error', 
