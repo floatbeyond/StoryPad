@@ -1,6 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+
 const SignupPage = () => {
   const [error, setError] = useState(null);  //shown when signup fails + hook
   const [success, setSuccess] = useState(null); //shown when signup is successful
