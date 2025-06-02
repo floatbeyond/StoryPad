@@ -258,6 +258,137 @@ app.post('/api/stories', authenticateToken, async (req, res) => {
   }
 });
 
+// Get all users (with pagination and filtering)
+app.get('/api/users', authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search } = req.query;
+    
+    console.log(`👥 Fetching users - Page: ${page}, Limit: ${limit}, Search: ${search || 'none'}`);
+
+    // Build search query
+    let query = {};
+    if (search) {
+      query = {
+        $or: [
+          { username: { $regex: search, $options: 'i' } },
+          { firstName: { $regex: search, $options: 'i' } },
+          { lastName: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+
+    // Get total count for pagination
+    const total = await User.countDocuments(query);
+    
+    // Get users with pagination
+    const users = await User.find(query)
+      .select('username firstName lastName email createdAt collaborationSettings')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    console.log(`✅ Found ${users.length} users out of ${total} total`);
+
+    res.json({
+      success: true,
+      users,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        totalUsers: total,
+        hasNext: page * limit < total,
+        hasPrev: page > 1
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error fetching users:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to fetch users', 
+      error: error.message 
+    });
+  }
+});
+
+// Get specific user by ID
+app.get('/api/users/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log(`👤 Fetching user details for ID: ${id}`);
+
+    const user = await User.findById(id)
+      .select('username firstName lastName email createdAt collaborationSettings');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    console.log(`✅ User found: ${user.username}`);
+
+    res.json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    console.error('❌ Error fetching user:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to fetch user', 
+      error: error.message 
+    });
+  }
+});
+
+// Get current user profile
+app.get('/api/users/me/profile', authenticateToken, async (req, res) => {
+  try {
+    console.log(`👤 Fetching profile for user: ${req.user.id}`);
+
+    const user = await User.findById(req.user.id)
+      .select('-password'); // Exclude password
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Get user's story count
+    const storyCount = await Story.countDocuments({ author: req.user.id });
+    
+    // Get collaborative story count
+    const collaborativeStoryCount = await Story.countDocuments({
+      'collaborators.user': req.user.id
+    });
+
+    console.log(`✅ Profile loaded: ${user.username} (${storyCount} stories, ${collaborativeStoryCount} collaborations)`);
+
+    res.json({
+      success: true,
+      user: {
+        ...user.toObject(),
+        stats: {
+          storiesCreated: storyCount,
+          collaborativeStories: collaborativeStoryCount
+        }
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error fetching user profile:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to fetch user profile', 
+      error: error.message 
+    });
+  }
+});
+
 // Get all stories endpoint
 app.get('/api/stories', async (req, res) => {
   try {
