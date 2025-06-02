@@ -22,6 +22,7 @@ const io = new Server(server, {
       "http://localhost:3000",
       "http://localhost:5173",           // Local development  
       "https://story-pad-two.vercel.app", // Vercel domain
+      "https://story-pad-git-prod-alons-projects-8fad2814.vercel.app", // Vercel domain
       "https://*.vercel.app", // Allow all Vercel subdomains for texting 
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -35,6 +36,7 @@ app.use(cors({
     "http://localhost:3000",
     "http://localhost:5173",           // Local development  
     "https://story-pad-two.vercel.app", // Vercel domain
+    "https://story-pad-git-prod-alons-projects-8fad2814.vercel.app", // Vercel domain
     "https://*.vercel.app", // Allow all Vercel subdomains for testing
   ],
   credentials: true,
