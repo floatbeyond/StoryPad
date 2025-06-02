@@ -169,7 +169,7 @@ const handleSave = async () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/stories/${storyId}/publish`, {
+      const response = await fetch(`${API_URL}/api/stories/${storyId}/publish`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`

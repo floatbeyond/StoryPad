@@ -39,7 +39,7 @@ const MyStoriesPage = () => {
         const tokenData = JSON.parse(atob(token.split('.')[1]));
 
         // Fetch owned stories
-        const ownedResponse = await fetch(`http://localhost:5000/api/user/${tokenData.id}/stories`, {
+        const ownedResponse = await fetch(`${API_URL}/api/user/${tokenData.id}/stories`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -67,7 +67,7 @@ const MyStoriesPage = () => {
         }
 
         // Fetch collaborative stories
-        const collaborativeResponse = await fetch(`http://localhost:5000/api/user/${tokenData.id}/collaborative-stories`, {
+        const collaborativeResponse = await fetch(`${API_URL}/api/user/${tokenData.id}/collaborative-stories`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
