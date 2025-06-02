@@ -1,94 +1,169 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import defaultAvatar from "../assets/profileimage.png";
 
 const ProfilePage = () => {
   const [userData, setUserData] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [editData, setEditData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: ""
+  });
 
   useEffect(() => {
-    // כאן אתה יכול למשוך נתונים מהשרת לפי ה-username השמור בלוקל סטורג'
     const username = localStorage.getItem("username");
     if (username) {
-      // סימולציה לנתונים
-      setUserData({
-        username,
-        fullName: "Alex Johnson",
-        email: "alex@example.com",
-        bio: "Fantasy and sci-fi writer. Dreaming across timelines. 📚✨",
-        profileImage:
-          "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&q=80",
-        joined: "2023-08-01",
-        storiesCount: 4,
-        followers: 198,
-        likes: 4235,
-      });
+      fetch(`http://localhost:5000/api/users/${username}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setUserData(data);
+          const [firstName = "", lastName = ""] = data.fullName?.split(" ") || [];
+          setEditData({
+            firstName,
+            lastName,
+            email: data.email,
+            password: ""
+          });
+        })
+        .catch((err) => console.error("Failed to fetch user data:", err));
     }
   }, []);
 
-  
+  const handleSave = () => {
+    const payload = { ...editData };
+    if (!payload.password) delete payload.password;
+
+    fetch(`http://localhost:5000/api/users/${userData.username}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => res.json())
+      .then(() => {
+        setIsEditing(false);
+        setUserData((prev) => ({
+          ...prev,
+          fullName: `${editData.firstName} ${editData.lastName}`,
+          email: editData.email
+        }));
+      })
+      .catch((err) => console.error("Update failed:", err));
+  };
+
   if (!userData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-storypad-background text-white">
+      <div className="min-h-screen flex items-center justify-center text-gray-600">
         <p>Loading profile...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-storypad-background py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
-        <div className="flex flex-col md:flex-row items-center gap-6">
-          <img
-            src={userData.profileImage}
-            alt={userData.fullName}
-            className="w-32 h-32 rounded-full object-cover shadow"
-          />
-          <div className="text-center md:text-left">
-            <h1 className="text-3xl font-bold text-storypad-dark">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+          <div className="w-40 h-40 rounded-full overflow-hidden shadow border-4 border-gray-300">
+            <img
+              src={defaultAvatar}
+              alt={userData.fullName}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="text-center md:text-left flex-1">
+            <h1 className="text-3xl font-bold text-gray-800">
               {userData.fullName}
             </h1>
-            <p className="text-storypad-text-light">@{userData.username}</p>
-            <p className="mt-2 text-storypad-text">{userData.bio}</p>
+            <p className="text-gray-500">@{userData.username}</p>
             <p className="text-sm text-gray-400 mt-1">
               Joined: {new Date(userData.joined).toLocaleDateString()}
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 text-center">
-          <div>
-            <p className="text-xl font-bold text-storypad-primary">
-              {userData.storiesCount}
-            </p>
-            <p className="text-storypad-text">Stories</p>
-          </div>
-          <div>
-            <p className="text-xl font-bold text-storypad-primary">
-              {userData.followers}
-            </p>
-            <p className="text-storypad-text">Followers</p>
-          </div>
-          <div>
-            <p className="text-xl font-bold text-storypad-primary">
-              {userData.likes}
-            </p>
-            <p className="text-storypad-text">Likes</p>
-          </div>
-          <div>
-            <Link
-              to="/edit-profile"
-              className="text-sm text-storypad-primary hover:underline"
+        {isEditing ? (
+          <div className="mt-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                className="w-full border p-2"
+                value={editData.firstName}
+                onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
+                placeholder="First Name"
+              />
+              <input
+                type="text"
+                className="w-full border p-2"
+                value={editData.lastName}
+                onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
+                placeholder="Last Name"
+              />
+            </div>
+            <input
+              type="email"
+              className="w-full border p-2"
+              value={editData.email}
+              onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+              placeholder="Email"
+            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="w-full border p-2 pr-10"
+                value={editData.password}
+                onChange={(e) => setEditData({ ...editData, password: e.target.value })}
+                placeholder="Change Password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+              >
+               
+              </button>
+            </div>
+            <div className="flex justify-between items-center mt-6">
+              {/* Back Button - Left side */}
+              <button
+                onClick={() => setIsEditing(false)}
+                className="text-gray-500 hover:underline"
+              >
+                ← Back
+              </button>
+              <button
+                onClick={handleSave}
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Save Changes
+              </button>
+            </div>
+           </div>
+      
+        ) : (
+          <div className="text-right mt-6">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="text-sm text-blue-600 hover:underline"
             >
               Edit Profile
-            </Link>
+            </button>
           </div>
-        </div>
+        )}
 
-        {/* Placeholder: User's Stories */}
-        <div className="mt-10">
-          <h2 className="text-2xl font-semibold text-storypad-dark mb-4">
-            Your Stories
-          </h2>
-          <p className="text-storypad-text-light">Coming soon: List of your stories with edit options.</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 text-center">
+          <div>
+            <p className="text-xl font-bold text-blue-600">{userData.storiesCount}</p>
+            <p className="text-gray-600">Stories</p>
+          </div>
+          <div>
+            <p className="text-xl font-bold text-blue-600">{userData.followers}</p>
+            <p className="text-gray-600">Followers</p>
+          </div>
+          <div>
+            <p className="text-xl font-bold text-blue-600">{userData.likes}</p>
+            <p className="text-gray-600">Likes</p>
+          </div>
         </div>
       </div>
     </div>
@@ -96,4 +171,3 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
-
