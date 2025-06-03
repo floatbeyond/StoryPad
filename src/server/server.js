@@ -8,13 +8,18 @@ import { authenticateToken, SECRET_KEY } from './authMiddleware.js';
 import { Story } from '../models/Story.js';
 
 const app = express();
+
 app.use(cors({
-  origin: 'http://localhost:5173', // Client port
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Accept']
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
+
 app.use(express.json());
+app.get('/api/invitations', (req, res) => {
+  res.json({ invitations: [] });
+});
 
 app.get('/', (req, res) => {
   res.send('✅ Express server is working!');
@@ -151,6 +156,57 @@ app.get('/api/story/:id/chapter/:chapterId', authenticateToken, async (req, res)
     content: `<p>This is the full content for chapter ${chapterId} of story ${id}.</p>`
   });
 });
+
+// GET user by username
+app.get('/api/users/:username', async (req, res) => {
+  const { username } = req.params;
+  try {
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json({
+      fullName: `${user.firstName} ${user.lastName}`,
+      email: user.email,
+      username: user.username,
+      joined: user.createdAt,
+      storiesCount: user.storiesCount || 0,
+      followers: user.followers || 0,
+      likes: user.likes || 0
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// PUT to update user by username
+app.put('/api/users/:username', async (req, res) => {
+  const { username } = req.params;
+  const { firstName, lastName, email, password } = req.body;
+
+  try {
+    const updatedUser = await User.findOneAndUpdate(
+      { username },
+      {
+        $set: {
+          firstName,
+          lastName,
+          email,
+          ...(password && { password })
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) return res.status(404).json({ message: 'User not found' });
+    res.json({ message: 'User updated successfully' });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Update failed', error: error.message });
+  }
+});
+
+
+
 
 // Ensure the app is exported for use in the server setup
 export default app;
