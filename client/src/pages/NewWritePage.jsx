@@ -12,7 +12,7 @@ const languages = [
   "עברית", "English", "Español", "Français", "Русский", "العربية"
 ];
 
-const DEFAULT_COVER = '/default-cover.jpg';
+const DEFAULT_COVER = 'https://res.cloudinary.com/dwtcfxtfp/image/upload/v1749068343/default-cover_xrc5et.png';
 
 const NewWritePage = () => {
   const navigate = useNavigate();
