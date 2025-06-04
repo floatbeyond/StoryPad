@@ -263,7 +263,7 @@ const StoryCard = ({ story }) => {
         </p>
         
         <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-          <span>{story.category}</span>
+          <span>{Array.isArray(story.category) ? story.category.join(' • ') : story.category}</span>
           <span>{story.language}</span>
         </div>
         
@@ -313,7 +313,7 @@ const CollaborativeStoryCard = ({ story }) => {
         
         <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
           <span>by {story.author.username}</span>
-          <span>{story.category}</span>
+          <span>{Array.isArray(story.category) ? story.category.join(' • ') : story.category}</span>
         </div>
         
         <div className="flex items-center justify-between text-sm text-gray-500 mb-6">

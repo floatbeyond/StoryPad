@@ -6,6 +6,15 @@ import { User } from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import { authenticateToken, SECRET_KEY } from './authMiddleware.js';
 import { Story } from '../models/Story.js';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import fs from 'fs';
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 
@@ -17,6 +26,122 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+// Configure multer for image uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '..', 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(new Error('Only image files are allowed'));
+    }
+    cb(null, true);
+  }
+});
+
+// Serve static files
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
+
+// Real-time collaboration tracking
+const activeUsers = new Map(); // Track users per story
+const cursorPositions = new Map(); // Track cursor positions
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  console.log('📡 User connected:', socket.id);
+
+  // Join a story room for collaboration
+  socket.on('join-story', (data) => {
+    const { storyId, username, userId } = data;
+    socket.join(storyId);
+    
+    // Store user info
+    activeUsers.set(socket.id, { storyId, username, userId });
+    
+    console.log(`👤 ${username} joined story ${storyId}`);
+    
+    // Notify others that user joined
+    socket.to(storyId).emit('user-joined', {
+      userId,
+      username,
+      socketId: socket.id
+    });
+    
+    // Send current active users to the new user
+    const roomUsers = Array.from(activeUsers.values())
+      .filter(user => user.storyId === storyId && user.userId !== userId)
+      .map(user => ({ userId: user.userId, username: user.username }));
+    
+    socket.emit('active-users', roomUsers);
+  });
+
+
+  // Handle text changes
+  socket.on('text-change', (data) => {
+    const user = activeUsers.get(socket.id);
+    if (user) {
+      console.log(`📝 Text change from ${user.username} in story ${user.storyId}`);
+      // Broadcast the change to all other users in the same story
+      socket.to(user.storyId).emit('text-change', {
+        ...data,
+        userId: user.userId,
+        username: user.username
+      });
+    }
+  });
+
+  // Handle cursor position changes
+  socket.on('cursor-change', (data) => {
+    const user = activeUsers.get(socket.id);
+    if (user) {
+      cursorPositions.set(socket.id, data);
+      // Broadcast cursor position to others
+      socket.to(user.storyId).emit('cursor-change', {
+        ...data,
+        userId: user.userId,
+        username: user.username,
+        socketId: socket.id
+      });
+    }
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    const user = activeUsers.get(socket.id);
+    if (user) {
+      console.log(`👋 ${user.username} left story ${user.storyId}`);
+      // Notify others that user left
+      socket.to(user.storyId).emit('user-left', {
+        userId: user.userId,
+        username: user.username,
+        socketId: socket.id
+      });
+      
+      activeUsers.delete(socket.id);
+      cursorPositions.delete(socket.id);
+    }
+  });
+});
+
+// Health check endpoint
 app.get('/api/invitations', (req, res) => {
   res.json({ invitations: [] });
 });
@@ -55,71 +180,205 @@ app.post('/api/signup', async (req, res) => {
 });
 
 // Stories endpoint - Handle story creation
-app.post('/api/stories', async (req, res) => {
+app.post('/api/stories', authenticateToken, upload.single('cover'), async (req, res) => {
   try {
     console.log('📝 Received new story request');
-    console.log('Request body:', req.body);
     
     const { title, description, category, language } = req.body;
+    const coverImage = req.file ? `/uploads/${req.file.filename}` : '/default-cover.jpg';
 
-    // Create new story instance
-    const authorId = req.user?._id || '65432109876543210987654321';
-    console.log('\n Author Details:');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(' Author ID:', authorId);
-    console.log('Type:', req.user ? 'Logged In User' : 'Default ID');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    if (!title || !description || !Array.isArray(JSON.parse(category)) || JSON.parse(category).length === 0 || !language) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'All fields are required and category must be an array' 
+      });
+    }
+
+    const authorId = req.user.id;
 
     const newStory = new Story({
       title,
       description,
-      category,
+      category: JSON.parse(category),
       language,
       author: authorId,
+      cover: coverImage,
       chapters: [],
-      published: false
+      published: false,
+      publishedAt: null,
+      lastPublishedAt: null,
+      publishedChapters: [],
+      views: 0
     });
-    // Save to database
+
     await newStory.save();
     console.log('✅ Story saved successfully:');
     console.log('- Story ID:', newStory._id);
+    console.log('- Author ID:', newStory.author);
     console.log('- Created at:', newStory.createdAt);
 
-    // Return success response
-    res.status(201).json({ 
+    res.status(201).json({
+      success: true,
       message: 'Story created successfully',
       story: newStory
     });
 
   } catch (error) {
-    console.error('Story creation error:', error);
+    console.error('❌ Error creating story:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to create story', 
+      error: error.message 
+    });
+  }
+});
+
+// Update story cover image
+app.put('/api/stories/:id/cover', authenticateToken, upload.single('cover'), async (req, res) => {
+  try {
+    const { id } = req.params;
     
-    // Handle specific error types
-    if (error.name === 'ValidationError') {
-      // MongoDB validation error (missing required fields or invalid data)
-      return res.status(400).json({ 
-        message: 'Invalid story data', 
-        details: error.errors
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided'
       });
     }
 
-    if (error.name === 'CastError') {
-      // Invalid MongoDB ID format or other casting issues
-      return res.status(400).json({ 
-        message: 'Invalid data format',
-        details: error.message
+    const story = await Story.findById(id);
+    if (!story) {
+      return res.status(404).json({
+        success: false,
+        message: 'Story not found'
       });
     }
 
-    if (error.name === 'MongooseError') {
-      // General Mongoose errors
-      return res.status(400).json({ 
-        message: 'Database operation failed',
-        details: error.message
+    if (story.author.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this story'
       });
     }
 
-    // Default error response for unhandled errors
+    // Delete old cover image if it exists and isn't the default
+    if (story.cover && story.cover !== '/default-cover.jpg') {
+      const oldCoverPath = path.join(__dirname, '..', story.cover);
+      if (fs.existsSync(oldCoverPath)) {
+        fs.unlinkSync(oldCoverPath);
+      }
+    }
+
+    const coverUrl = `/uploads/${req.file.filename}`;
+    story.cover = coverUrl;
+    await story.save();
+
+    res.json({
+      success: true,
+      message: 'Cover image updated successfully',
+      coverUrl
+    });
+
+  } catch (error) {
+    console.error('❌ Error updating cover image:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update cover image',
+      error: error.message
+    });
+  }
+});
+
+// Get published stories endpoint
+app.get('/api/stories/published', async (req, res) => {
+  try {
+    const stories = await Story.find({ 
+      published: true,
+      'chapters.published': true 
+    })
+    .populate('author', 'username')
+    .select('title description category language author publishedAt chapters')
+    .sort('-lastPublishedAt');
+
+    const processedStories = stories.map(story => ({
+      ...story.toObject(),
+      chapters: story.chapters.filter(ch => ch.published)
+    }));
+
+    res.json({
+      success: true,
+      stories: processedStories
+    });
+
+  } catch (error) {
+    console.error('Error fetching published stories:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch published stories',
+      error: error.message
+    });
+  }
+});
+
+// Get all stories endpoint
+app.get('/api/stories', async (req, res) => {
+  try {
+    const stories = await Story.find()
+      .populate('author', 'username firstName lastName')
+      .select('-chapters.content');
+    
+    res.json({
+      success: true,
+      stories
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to fetch stories', 
+      error: error.message 
+    });
+  }
+});
+
+// Get story with collaboration check
+app.get('/api/stories/:id', authenticateToken, async (req, res) => {
+  try {
+    console.log(`📖 Fetching story ${req.params.id} for user ${req.user.id}`);
+    
+    const story = await Story.findById(req.params.id)
+      .populate('author', 'username firstName lastName')
+      .populate('collaborators.user', 'username firstName lastName');
+
+    if (!story) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Story not found' 
+      });
+    }
+
+    console.log('Story author:', story.author);
+    console.log('Requesting user:', req.user.id);
+
+    // Check if user has access (owner or collaborator)
+    const isOwner = story.author && story.author._id.toString() === req.user.id;
+    const isCollaborator = story.collaborators && story.collaborators.some(
+      collab => collab.user && collab.user._id.toString() === req.user.id
+    );
+
+    if (!isOwner && !isCollaborator) {
+      console.log(`❌ Access denied for user ${req.user.id} to story ${req.params.id}`);
+      return res.status(403).json({ 
+        success: false,
+        message: 'Access denied' 
+      });
+    }
+
+    console.log(`✅ Story access granted for user ${req.user.id}`);
+    res.json({
+      success: true,
+      story
+    });
+  } catch (error) {
+    console.error('❌ Error fetching story:', error);
     res.status(500).json({ 
       message: 'Failed to create story',
       error: error.message 
@@ -178,24 +437,160 @@ app.get('/api/users/:username', async (req, res) => {
   }
 });
 
-// PUT to update user by username
-app.put('/api/users/:username', async (req, res) => {
-  const { username } = req.params;
-  const { firstName, lastName, email, password } = req.body;
-
+// Publish chapters endpoint
+app.put('/api/stories/:id/publish', authenticateToken, async (req, res) => {
   try {
-    const updatedUser = await User.findOneAndUpdate(
-      { username },
-      {
-        $set: {
-          firstName,
-          lastName,
-          email,
-          ...(password && { password })
-        }
-      },
-      { new: true }
+    const { id } = req.params;
+    const { publishedChapters } = req.body;
+
+    // Find story and verify ownership
+    const story = await Story.findById(id);
+    if (!story) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Story not found' 
+      });
+    }
+
+    if (story.author.toString() !== req.user.id) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Only the author can publish chapters' 
+      });
+    }
+
+    // Update chapters publish status
+    story.chapters = story.chapters.map((chapter, idx) => ({
+      ...chapter,
+      published: publishedChapters.includes(idx),
+      publishedAt: publishedChapters.includes(idx) ? new Date() : chapter.publishedAt
+    }));
+
+    // Update story publish status
+    story.published = story.chapters.some(ch => ch.published);
+    if (story.published && !story.publishedAt) {
+      story.publishedAt = new Date();
+    }
+    story.lastPublishedAt = new Date();
+    story.publishedChapters = publishedChapters;
+
+    await story.save();
+
+    res.json({
+      success: true,
+      message: 'Chapters published successfully',
+      story
+    });
+
+  } catch (error) {
+    console.error('Error publishing chapters:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to publish chapters',
+      error: error.message
+    });
+  }
+});
+
+// Publish chapters endpoint
+app.put('/api/stories/:id/publish', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { publishedChapters } = req.body;
+
+    // Find story and verify ownership
+    const story = await Story.findById(id);
+    if (!story) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Story not found' 
+      });
+    }
+
+    if (story.author.toString() !== req.user.id) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Only the author can publish chapters' 
+      });
+    }
+
+    // Update chapters publish status
+    story.chapters = story.chapters.map((chapter, idx) => ({
+      ...chapter,
+      published: publishedChapters.includes(idx),
+      publishedAt: publishedChapters.includes(idx) ? new Date() : chapter.publishedAt
+    }));
+
+    // Update story publish status
+    story.published = story.chapters.some(ch => ch.published);
+    if (story.published && !story.publishedAt) {
+      story.publishedAt = new Date();
+    }
+    story.lastPublishedAt = new Date();
+    story.publishedChapters = publishedChapters;
+
+    await story.save();
+
+    res.json({
+      success: true,
+      message: 'Chapters published successfully',
+      story
+    });
+
+  } catch (error) {
+    console.error('Error publishing chapters:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to publish chapters',
+      error: error.message
+    });
+  }
+});
+
+// Update story endpoint
+app.put('/api/stories/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, category, language, chapters } = req.body;
+
+    // Find the story and verify ownership/collaboration
+    const story = await Story.findById(id);
+    if (!story) {
+      return res.status(404).json({
+        success: false,
+        message: 'Story not found'
+      });
+    }
+
+    // Check if user has edit access (owner or collaborator)
+    const isOwner = story.author.toString() === req.user.id;
+    const isCollaborator = story.collaborators.some(
+      collab => collab.user.toString() === req.user.id
     );
+
+    if (!isOwner && !isCollaborator) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this story'
+      });
+    }
+
+    // Update the story with new data
+    const updatedStory = await Story.findByIdAndUpdate(
+    id,
+    {
+      $set: {
+        title,
+        description,
+        category,
+        language,
+        chapters,
+        lastPublishedAt: story.published ? new Date() : story.lastPublishedAt,
+        updatedAt: new Date()
+      }
+    },
+    { new: true }
+  );
 
     if (!updatedUser) return res.status(404).json({ message: 'User not found' });
     res.json({ message: 'User updated successfully' });

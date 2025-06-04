@@ -4,6 +4,7 @@ const chapterSchema = new mongoose.Schema({
   title: { type: String, required: true },
   content: { type: String, required: true },
   published: { type: Boolean, default: false },
+  publishedAt: { type: Date },
   lastEditedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   lastEditedAt: { type: Date, default: Date.now }
 });
@@ -28,13 +29,19 @@ const invitationSchema = new mongoose.Schema({
 const storySchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
-  category: { type: String, required: true },
+  category: { type: [String], required: true },
   language: { type: String, required: true },
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Original creator
   collaborators: [collaboratorSchema], // Active collaborators
   pendingInvitations: [invitationSchema], // Pending invitations
   chapters: { type: [chapterSchema], default: [] },
-  published: { type: Boolean, default: false }
+  published: { type: Boolean, default: false },
+  publishedAt: { type: Date },  
+  lastPublishedAt: { type: Date },  
+  publishedChapters: [Number],  
+  views: { type: Number, default: 0 }  
 }, { timestamps: true });
+
+storySchema.index({ published: 1, category: 1, publishedAt: -1 });
 
 export const Story = mongoose.model('Story', storySchema);

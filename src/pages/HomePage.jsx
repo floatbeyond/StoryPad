@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const FeaturedStory = ({ title, author, cover, tags, likes, reads }) => (
   <div className="card hover:shadow-lg transition-shadow">
@@ -62,9 +62,12 @@ const StoryCard = ({ title, author, cover, description, likes, reads }) => (
 );
 
 const HomePage = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   const isLoggedIn = !!localStorage.getItem("token"); // Check if user is logged in
   const [showOptions, setShowOptions] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stories, setStories] = useState([]);
 
   const handleStartWriting = () => {
     if (!isLoggedIn) {
@@ -73,6 +76,37 @@ const HomePage = () => {
       setShowOptions(true);
     }
   };
+
+  useEffect(() => {
+    const fetchPublishedStories = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/stories/published');
+        const data = await response.json();
+        
+        if (data.success) {
+          setStories(data.stories);
+          setFeaturedStories(
+            data.stories
+              .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
+              .slice(0, 4)
+          );
+          setPopularStories(
+            data.stories
+              .sort((a, b) => b.views - a.views)
+              .slice(0, 3)
+          );
+        }
+      } catch (err) {
+        console.error('Error fetching stories:', err);
+        setError('Failed to load stories');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPublishedStories();
+  }, []);
+
   // Dummy data for featured stories
   const featuredStories = [
     {
@@ -193,18 +227,17 @@ const HomePage = () => {
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredStories.map((story) => (
-              <Link to={`/stories/${story.id}`} key={story.id}>
-                <FeaturedStory
-                  title={story.title}
-                  author={story.author}
-                  cover={story.cover}
-                  tags={story.tags}
-                  likes={story.likes}
-                  reads={story.reads}
-                />
-              </Link>
-            ))}
+            {loading ? (
+              <div className="col-span-full text-center py-8">Loading stories...</div>
+            ) : error ? (
+              <div className="col-span-full text-red-500 text-center py-8">{error}</div>
+            ) : (
+              featuredStories.map((story) => (
+                <Link to={`/story/${story.id}`} key={story.id}>
+                  <FeaturedStory {...story} />
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -214,7 +247,7 @@ const HomePage = () => {
         <div className="container-custom">
           <h2 className="text-2xl font-bold text-storypad-dark mb-6">Browse by Category</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {['Fantasy', 'Romance', 'Science Fiction', 'Mystery', 'Horror', 'Adventure', 'Historical', 'Poetry'].map((category) => (
+            {Array.from(new Set(stories.flatMap(s => s.category))).map((category) => (
               <Link
                 to={`/categories/${category.toLowerCase().replace(' ', '-')}`}
                 key={category}
@@ -237,18 +270,17 @@ const HomePage = () => {
             </Link>
           </div>
           <div className="space-y-6">
-            {popularStories.map((story) => (
-              <Link to={`/stories/${story.id}`} key={story.id}>
-                <StoryCard
-                  title={story.title}
-                  author={story.author}
-                  cover={story.cover}
-                  description={story.description}
-                  likes={story.likes}
-                  reads={story.reads}
-                />
-              </Link>
-            ))}
+            {loading ? (
+              <div className="text-center py-8">Loading stories...</div>
+            ) : error ? (
+              <div className="text-red-500 text-center py-8">{error}</div>
+            ) : (
+              popularStories.map((story) => (
+                <Link to={`/story/${story.id}`} key={story.id}>
+                  <StoryCard {...story} />
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>
