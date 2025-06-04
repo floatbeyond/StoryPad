@@ -1,64 +1,12 @@
 {
   "name": "storypad",
-  "private": true,
-  "version": "0.0.0",
-  "proxy": "http://localhost:5000",
-  "type": "module",
   "scripts": {
-    "frontend": "vite --host 0.0.0.0",
-    "backend": "nodemon src/server/server.js",
-    "dev": "concurrently \"npm run frontend\" \"npm run backend\""
-  },
-  "dependencies": {
-    "@tailwindcss/typography": "^0.5.16",
-    "bcrypt": "^6.0.0",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "express-fileupload": "^1.5.1",
-    "fs-extra": "^11.3.0",
-    "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.16.0",
-    "mongoose": "^8.15.0",
-    "multer": "^2.0.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^7.5.0",
-    "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1",
-    "tailwindcss-animate": "^1.0.7"
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build": "cd client && npm run build"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
-    "@eslint/js": "^9.18.0",
-    "@vitejs/plugin-react": "^4.3.4",
-    "autoprefixer": "^10.4.20",
-    "concurrently": "^8.2.2",
-    "cors": "^2.8.5",
-    "eslint": "^9.18.0",
-    "eslint-config-prettier": "^10.0.1",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-react": "^7.37.4",
-    "eslint-plugin-react-hooks": "^5.1.0",
-    "eslint-plugin-react-refresh": "^0.4.18",
-    "globals": "^15.14.0",
-    "nodemon": "^3.1.10",
-    "postcss": "^8.5.1",
-    "prettier": "^3.4.2",
-    "prettier-plugin-tailwindcss": "^0.6.10",
-    "tailwindcss": "^3.4.17",
-    "vite": "^6.0.5"
-  },
-  "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
-  "main": "postcss.config.js",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/floatbeyond/StoryPad.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/floatbeyond/StoryPad/issues"
-  },
-  "homepage": "https://github.com/floatbeyond/StoryPad#readme"
+    "concurrently": "^8.2.2"
+  }
 }

@@ -4,22 +4,48 @@ import cors from 'cors';
 import { connectDB } from '../config/db.js';
 import { User } from '../models/User.js';
 import jwt from 'jsonwebtoken';
-import { authenticateToken, SECRET_KEY } from './authMiddleware.js';
+import { authenticateToken, SECRET_KEY } from '../authMiddleware.js';
 import { Story } from '../models/Story.js';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import fs from 'fs';
+import { Server } from 'socket.io';
 
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Create HTTP server for Socket.io
+const server = http.createServer(app);
+
+// Initialize Socket.io
+const io = new Server(server, {
+  cors: {
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "https://story-pad-two.vercel.app",
+      "https://story-pad-git-prod-alons-projects-8fad2814.vercel.app",
+      "https://*.vercel.app"
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+  }
+});
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: [
+    "http://localhost:3000", 
+    "http://localhost:5173",
+    "https://story-pad-two.vercel.app",
+    "https://story-pad-git-prod-alons-projects-8fad2814.vercel.app",
+    "https://*.vercel.app"
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -492,61 +518,6 @@ app.put('/api/stories/:id/publish', authenticateToken, async (req, res) => {
   }
 });
 
-// Publish chapters endpoint
-app.put('/api/stories/:id/publish', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { publishedChapters } = req.body;
-
-    // Find story and verify ownership
-    const story = await Story.findById(id);
-    if (!story) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Story not found' 
-      });
-    }
-
-    if (story.author.toString() !== req.user.id) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Only the author can publish chapters' 
-      });
-    }
-
-    // Update chapters publish status
-    story.chapters = story.chapters.map((chapter, idx) => ({
-      ...chapter,
-      published: publishedChapters.includes(idx),
-      publishedAt: publishedChapters.includes(idx) ? new Date() : chapter.publishedAt
-    }));
-
-    // Update story publish status
-    story.published = story.chapters.some(ch => ch.published);
-    if (story.published && !story.publishedAt) {
-      story.publishedAt = new Date();
-    }
-    story.lastPublishedAt = new Date();
-    story.publishedChapters = publishedChapters;
-
-    await story.save();
-
-    res.json({
-      success: true,
-      message: 'Chapters published successfully',
-      story
-    });
-
-  } catch (error) {
-    console.error('Error publishing chapters:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to publish chapters',
-      error: error.message
-    });
-  }
-});
-
 // Update story endpoint
 app.put('/api/stories/:id', authenticateToken, async (req, res) => {
   try {
@@ -592,24 +563,87 @@ app.put('/api/stories/:id', authenticateToken, async (req, res) => {
     { new: true }
   );
 
-    if (!updatedUser) return res.status(404).json({ message: 'User not found' });
-    res.json({ message: 'User updated successfully' });
+  // Fix this line - it should be updatedStory, not updatedUser:
+  if (!updatedStory) return res.status(404).json({ message: 'Story not found' });
+  
+  res.json({ 
+    success: true,
+    message: 'Story updated successfully',
+    story: updatedStory
+  });
 
   } catch (error) {
     res.status(500).json({ message: 'Update failed', error: error.message });
   }
 });
 
+// Get user's owned stories
+app.get('/api/user/:userId/stories', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Verify user is requesting their own stories
+    if (req.user.id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
 
+    const stories = await Story.find({ author: userId })
+      .populate('author', 'username firstName lastName')
+      .sort('-createdAt');
 
+    res.json({
+      success: true,
+      stories
+    });
 
+  } catch (error) {
+    console.error('Error fetching user stories:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch stories',
+      error: error.message
+    });
+  }
+});
 
-// Ensure the app is exported for use in the server setup
-export default app;
+// Get user's collaborative stories
+app.get('/api/user/:userId/collaborative-stories', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Verify user is requesting their own collaborative stories
+    if (req.user.id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
 
-const server = http.createServer(app);
+    const stories = await Story.find({
+      'collaborators.user': userId,
+      author: { $ne: userId } // Exclude stories they own
+    })
+    .populate('author', 'username firstName lastName')
+    .populate('collaborators.user', 'username firstName lastName')
+    .sort('-createdAt');
 
-const PORT = process.env.PORT || 5000;
+    res.json({
+      success: true,
+      stories
+    });
+
+  } catch (error) {
+    console.error('Error fetching collaborative stories:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch collaborative stories',
+      error: error.message
+    });
+  }
+});
 
 // Connect to DB and start server
 const startServer = async () => {
@@ -617,7 +651,7 @@ const startServer = async () => {
     await connectDB();
     console.log('Connected to MongoDB');
     
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {

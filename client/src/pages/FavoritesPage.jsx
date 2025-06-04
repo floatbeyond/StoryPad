@@ -1,7 +1,7 @@
-// FavoritesPage.jsx
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const FavoritesPage = () => {
   const [favorites, setFavorites] = useState([]);
@@ -10,15 +10,32 @@ const FavoritesPage = () => {
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/users/${username}/favorites`);
-        setFavorites(response.data);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error("No token found");
+          return;
+        }
+
+        const response = await fetch(`${API_URL}/api/users/${username}/favorites`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch favorites');
+        }
+
+        const data = await response.json();
+        setFavorites(data);
       } catch (error) {
         console.error("Failed to load favorites", error);
       }
     };
 
     fetchFavorites();
-  }, []);
+  }, [username]);
 
   return (
     <div className="container-custom py-12">
