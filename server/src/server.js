@@ -1,11 +1,11 @@
 import http from 'http';
 import express from 'express';
 import cors from 'cors';
-import { connectDB } from '../config/db.js';
-import { User } from '../models/User.js';
+import { connectDB } from './config/db.js';
+import { User } from './models/User.js';
 import jwt from 'jsonwebtoken';
-import { authenticateToken, SECRET_KEY } from '../authMiddleware.js';
-import { Story } from '../models/Story.js';
+import { authenticateToken, SECRET_KEY } from './authMiddleware.js';
+import { Story } from './models/Story.js';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
