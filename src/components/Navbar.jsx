@@ -65,7 +65,7 @@ const Navbar = () => {
           <div className="hidden md:flex space-x-8">
             <Link to="/browse" className="text-storypad-text hover:text-storypad-primary transition-colors">Browse</Link>
             <Link to="/categories" className="text-storypad-text hover:text-storypad-primary transition-colors">Categories</Link>
-            <Link to="/community" className="text-storypad-text hover:text-storypad-primary transition-colors">Community</Link>
+            <Link to="/favorites" className="text-storypad-text hover:text-storypad-primary transition-colors flex items-center gap-1">Favorites</Link>
             <Link to="/mystories" className="text-storypad-text hover:text-storypad-primary transition-colors">My Stories</Link>
           </div>
 
@@ -178,7 +178,7 @@ const Navbar = () => {
             <div className="flex flex-col space-y-3">
               <Link to="/browse" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}>Browse</Link>
               <Link to="/categories" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}>Categories</Link>
-              <Link to="/community" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}>Community</Link>
+              <Link to="/favorites" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}> Favorites</Link>
               <Link to="/mystories" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}>My Stories</Link>
 
               <div className="flex flex-col space-y-2 mt-4">

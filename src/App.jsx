@@ -5,12 +5,12 @@ import StoryPage from './pages/StoryPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import BrowsePage from './pages/BrowsePage';
-import CommunityPage from './pages/CommunityPage';
 import NewWritePage from './pages/NewWritePage';
 import MyStoriesPage from './pages/MyStoriesPage';
 import ProfilePage from './pages/ProfilePage';
 import WritePage from './pages/WritePage';
 import InvitationsPage from './pages/InvitationsPage';
+import FavoritesPage from './pages/FavoritesPage';
 
 
 function App() {
@@ -25,7 +25,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/stories/:id" element={<StoryPage />} />
         <Route path="/browse" element={<BrowsePage />} />
-        <Route path="/community" element={<CommunityPage />} />
+        <Route path="/favorites" element={<FavoritesPage />} />
         <Route path="/invitations" element={<InvitationsPage />} />
         <Route path="/newwrite" element={<NewWritePage />} />
         <Route path="/mystories" element={<MyStoriesPage />} />
