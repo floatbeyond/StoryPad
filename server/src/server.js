@@ -29,6 +29,7 @@ app.use(cors({
     "http://localhost:5173",
     "https://story-pad-two.vercel.app",
     "https://story-pad-alons-projects-8fad2814.vercel.app",
+    "https://story-pad-git-main-alons-projects-8fad2814.vercel.app",
     "https://*.vercel.app"
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
