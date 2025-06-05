@@ -70,13 +70,18 @@ router.get('/published', async (req, res) => {
       'chapters.published': true 
     })
     .populate('author', 'username')
-    .select('title description category language author publishedAt chapters')
+    .select('title description category language author publishedAt chapters cover')
     .sort('-lastPublishedAt');
 
     const processedStories = stories.map(story => ({
       ...story.toObject(),
       chapters: story.chapters.filter(ch => ch.published)
     }));
+
+    console.log('📚 Sending stories with covers:', processedStories.map(s => ({ 
+      title: s.title, 
+      cover: s.cover 
+    })));
 
     res.json({
       success: true,
@@ -113,10 +118,10 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get single story
-router.get('/:id', authenticateToken, async (req, res) => {
+// Get single story (public access for published stories, auth for unpublished)
+router.get('/:id', async (req, res) => {
   try {
-    console.log(`📖 Fetching story ${req.params.id} for user ${req.user.id}`);
+    console.log(`📖 Fetching story ${req.params.id}`);
     
     const story = await Story.findById(req.params.id)
       .populate('author', 'username firstName lastName')
@@ -129,28 +134,68 @@ router.get('/:id', authenticateToken, async (req, res) => {
       });
     }
 
-    // Check if user has access (owner or collaborator)
-    const isOwner = story.author && story.author._id.toString() === req.user.id;
-    const isCollaborator = story.collaborators && story.collaborators.some(
-      collab => collab.user && collab.user._id.toString() === req.user.id
-    );
-
-    if (!isOwner && !isCollaborator) {
-      console.log(`❌ Access denied for user ${req.user.id} to story ${req.params.id}`);
-      return res.status(403).json({ 
-        success: false,
-        message: 'Access denied' 
+    // If story has published chapters, allow public access
+    const hasPublishedChapters = story.chapters.some(ch => ch.published);
+    
+    if (hasPublishedChapters) {
+      // Return only published chapters for public access
+      const publicStory = {
+        ...story.toObject(),
+        chapters: story.chapters.filter(ch => ch.published)
+      };
+      
+      return res.json({
+        success: true,
+        story: publicStory
       });
     }
 
-    console.log(`✅ Story access granted for user ${req.user.id}`);
-    res.json({
-      success: true,
-      story
-    });
+    // If no published chapters, require authentication
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(403).json({ 
+        success: false,
+        message: 'This story has no published content' 
+      });
+    }
+
+    // Verify token and check access for unpublished content
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = decoded;
+
+      // Check if user has access (owner or collaborator)
+      const isOwner = story.author && story.author._id.toString() === req.user.id;
+      const isCollaborator = story.collaborators && story.collaborators.some(
+        collab => collab.user && collab.user._id.toString() === req.user.id
+      );
+
+      if (!isOwner && !isCollaborator) {
+        return res.status(403).json({ 
+          success: false,
+          message: 'Access denied' 
+        });
+      }
+
+      // Return full story for authorized users
+      res.json({
+        success: true,
+        story
+      });
+
+    } catch (jwtError) {
+      return res.status(403).json({ 
+        success: false,
+        message: 'This story has no published content' 
+      });
+    }
+
   } catch (error) {
     console.error('❌ Error fetching story:', error);
     res.status(500).json({ 
+      success: false,
       message: 'Failed to fetch story',
       error: error.message 
     });

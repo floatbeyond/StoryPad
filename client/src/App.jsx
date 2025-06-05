@@ -22,7 +22,7 @@ function App() {
       {/* Main Layout Pages */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
-        <Route path="/stories/:id" element={<StoryPage />} />
+        <Route path="/story/:id" element={<StoryPage />} />
         <Route path="/browse" element={<BrowsePage />} />
         <Route path="/favorites" element={<FavoritesPage />} />
         <Route path="/invitations" element={<InvitationsPage />} />
