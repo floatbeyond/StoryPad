@@ -1,6 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const FeaturedStory = ({ title, author, cover, tags, likes, reads }) => (
   <div className="card hover:shadow-lg transition-shadow">
     <div className="relative">
@@ -80,7 +82,7 @@ const HomePage = () => {
   useEffect(() => {
     const fetchPublishedStories = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/stories/published');
+        const response = await fetch(`${API_BASE_URL}/api/stories/published`);
         const data = await response.json();
         
         if (data.success) {

@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useRef } from "react";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 // Available categories for stories
 const categories = [
   "Fantasy", "Romance", "Science Fiction", "Mystery", 
@@ -48,74 +50,74 @@ const NewWritePage = () => {
 
   // Handle form submission and story creation
   const handleCreateStory = async (e) => {
-  e.preventDefault();
-  setError(null);
-  setSuccess(null);
-  setIsLoading(true);
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    setIsLoading(true);
 
-  try {
-    const token = localStorage.getItem('token');
-    console.log('Token from localStorage:', token); // DEBUG
+    try {
+      const token = localStorage.getItem('token');
+      console.log('Token from localStorage:', token); // DEBUG
 
-    if (!token) {
-      setError("You must be logged in to create a story");
-      navigate('/login');
-      return;
-    }
+      if (!token) {
+        setError("You must be logged in to create a story");
+        navigate('/login');
+        return;
+      }
 
-    const formData = new FormData();
-    const form = formRef.current;
+      const formData = new FormData();
+      const form = formRef.current;
 
-    formData.append('title', form.title.value);
-    formData.append('description', form.description.value);
-    formData.append('language', form.language.value);
-    formData.append('category', JSON.stringify(selectedCategories));
+      formData.append('title', form.title.value);
+      formData.append('description', form.description.value);
+      formData.append('language', form.language.value);
+      formData.append('category', JSON.stringify(selectedCategories));
 
-    if (imageFile) {
-      formData.append('cover', imageFile);
-    }
+      if (imageFile) {
+        formData.append('cover', imageFile);
+      }
 
-    // Validate required fields
-    if (!form.title.value || !form.description.value || !form.language.value || selectedCategories.length === 0) {
-      setError("Please fill in all fields and select at least one category.");
+      // Validate required fields
+      if (!form.title.value || !form.description.value || !form.language.value || selectedCategories.length === 0) {
+        setError("Please fill in all fields and select at least one category.");
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/stories`, {
+        method: "POST",
+        headers: {
+          'Authorization': `Bearer ${token}`  // שים לב לפורמט המדויק
+        },
+        body: formData
+      });
+
+      if (response.status === 401) {
+        setError("Session expired. Please log in again.");
+        // Optional: Redirect to login
+        navigate('/login');
+        return;
+      }
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSuccess("Story created successfully!");
+        setTimeout(() => navigate(`/write/${result.story._id}`), 500);
+      } else {
+        throw new Error(result.message || "Failed to create story");
+      }
+    } catch (err) {
+      console.error('Creation error:', err);
+      if (err.message === "Failed to fetch") {
+        setError("Cannot connect to server. Is the server running?");
+      } else {
+        setError(err.message || "An error occurred. Please try again.");
+      }
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    const response = await fetch("http://localhost:5000/api/stories", {
-      method: "POST",
-      headers: {
-        'Authorization': `Bearer ${token}`  // שים לב לפורמט המדויק
-      },
-      body: formData
-    });
-
-    if (response.status === 401) {
-      setError("Session expired. Please log in again.");
-      // Optional: Redirect to login
-      navigate('/login');
-      return;
-    }
-
-    const result = await response.json();
-
-    if (response.ok) {
-      setSuccess("Story created successfully!");
-      setTimeout(() => navigate(`/write/${result.story._id}`), 500);
-    } else {
-      throw new Error(result.message || "Failed to create story");
-    }
-  } catch (err) {
-    console.error('Creation error:', err);
-    if (err.message === "Failed to fetch") {
-      setError("Cannot connect to server. Is the server running?");
-    } else {
-      setError(err.message || "An error occurred. Please try again.");
-    }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <div className="container-custom py-12">

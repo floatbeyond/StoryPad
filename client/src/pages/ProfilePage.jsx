@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import defaultAvatar from "../assets/profileimage.png";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const ProfilePage = () => {
   const [userData, setUserData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -15,7 +17,7 @@ const ProfilePage = () => {
   useEffect(() => {
     const username = localStorage.getItem("username");
     if (username) {
-      fetch(`http://localhost:5000/api/users/${username}`)
+      fetch(`${API_BASE_URL}/api/users/${username}`)
         .then((res) => res.json())
         .then((data) => {
           setUserData(data);
@@ -35,7 +37,7 @@ const ProfilePage = () => {
     const payload = { ...editData };
     if (!payload.password) delete payload.password;
 
-    fetch(`http://localhost:5000/api/users/${userData.username}`, {
+    fetch(`${API_BASE_URL}/api/users/${userData.username}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

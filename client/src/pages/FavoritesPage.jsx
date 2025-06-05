@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const FavoritesPage = () => {
   const [favorites, setFavorites] = useState([]);
@@ -16,7 +16,7 @@ const FavoritesPage = () => {
           return;
         }
 
-        const response = await fetch(`${API_URL}/api/users/${username}/favorites`, {
+        const response = await fetch(`${API_BASE_URL}/api/users/${username}/favorites`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

@@ -1,6 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const LoginPage = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -11,7 +13,7 @@ const LoginPage = () => {
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
     try {
-      const response = await fetch("http://localhost:5000/api/login", {
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
