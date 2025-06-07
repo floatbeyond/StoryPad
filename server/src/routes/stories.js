@@ -383,4 +383,75 @@ router.put('/:id/publish', authenticateToken, async (req, res) => {
   }
 });
 
+// Get comments for a chapter (last 3 or all)
+router.get('/:storyId/chapters/:chapterId/comments', async (req, res) => {
+  try {
+    const { storyId, chapterId } = req.params;
+    const { all } = req.query;
+    const story = await Story.findById(storyId); // Removed populate
+    if (!story) return res.status(404).json({ success: false, message: 'Story not found' });
+    const chapter = story.chapters.id(chapterId);
+    if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
+    let comments = chapter.comments || [];
+    if (!all) comments = comments.slice(-3); // last 3 by default
+    res.json({ success: true, comments });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to fetch comments', error: err.message });
+  }
+});
+
+// Add a comment to a chapter
+router.post('/:storyId/chapters/:chapterId/comments', authenticateToken, async (req, res) => {
+  try {
+    const { storyId, chapterId } = req.params;
+    const { text } = req.body;
+    if (!text || !text.trim()) return res.status(400).json({ success: false, message: 'Comment text required' });
+    const story = await Story.findById(storyId);
+    if (!story) return res.status(404).json({ success: false, message: 'Story not found' });
+    const chapter = story.chapters.id(chapterId);
+    if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
+    const user = req.user;
+    chapter.comments.push({ user: user.id, username: user.username, text });
+    await story.save();
+    res.status(201).json({ success: true, comment: chapter.comments[chapter.comments.length - 1] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to add comment', error: err.message });
+  }
+});
+
+// Like a story
+router.post('/:id/like', authenticateToken, async (req, res) => {
+  try {
+    const story = await Story.findById(req.params.id);
+    if (!story) return res.status(404).json({ success: false, message: 'Story not found' });
+    const userId = req.user.id;
+    if (story.likes.includes(userId)) {
+      return res.status(400).json({ success: false, message: 'Already liked' });
+    }
+    story.likes.push(userId);
+    await story.save();
+    res.json({ success: true, likes: story.likes.length });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to like story', error: err.message });
+  }
+});
+
+// Unlike a story
+router.post('/:id/unlike', authenticateToken, async (req, res) => {
+  try {
+    const story = await Story.findById(req.params.id);
+    if (!story) return res.status(404).json({ success: false, message: 'Story not found' });
+    const userId = req.user.id;
+    const idx = story.likes.indexOf(userId);
+    if (idx === -1) {
+      return res.status(400).json({ success: false, message: 'Not liked yet' });
+    }
+    story.likes.splice(idx, 1);
+    await story.save();
+    res.json({ success: true, likes: story.likes.length });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to unlike story', error: err.message });
+  }
+});
+
 export default router;

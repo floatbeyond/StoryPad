@@ -7,6 +7,13 @@ const StoryPage = () => {
   const [currentChapter, setCurrentChapter] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [showAllComments, setShowAllComments] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [commentError, setCommentError] = useState(null);
+  const [likes, setLikes] = useState(0);
+  const [liked, setLiked] = useState(false);
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -37,6 +44,88 @@ const StoryPage = () => {
 
     fetchStory();
   }, [id]);
+
+  // Fetch comments for the current chapter
+  useEffect(() => {
+    if (!currentChapter) return;
+    const fetchComments = async () => {
+      try {
+        setCommentLoading(true);
+        setCommentError(null);
+        const url = `${API_BASE_URL}/api/stories/${id}/chapters/${currentChapter._id}/comments${showAllComments ? '?all=1' : ''}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.success) setComments(data.comments);
+        else setComments([]);
+      } catch (err) {
+        setCommentError('Failed to load comments');
+      } finally {
+        setCommentLoading(false);
+      }
+    };
+    fetchComments();
+  }, [currentChapter, showAllComments, id]);
+
+  // Add comment handler
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+    setCommentLoading(true);
+    setCommentError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/stories/${id}/chapters/${currentChapter._id}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ text: commentText })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCommentText("");
+        setShowAllComments(true); // Show all after adding
+        setComments((prev) => [...prev, data.comment]);
+      } else {
+        setCommentError(data.message || 'Failed to add comment');
+      }
+    } catch (err) {
+      setCommentError('Failed to add comment');
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
+  // Fetch likes info when story loads
+  useEffect(() => {
+    if (!story) return;
+    setLikes(story.likes ? story.likes.length : 0);
+    const token = localStorage.getItem('token');
+    if (token && story.likes) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setLiked(story.likes.includes(payload.id));
+      } catch {}
+    } else {
+      setLiked(false);
+    }
+  }, [story]);
+
+  // Like/unlike handlers
+  const handleLike = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return alert('You must be logged in to like stories.');
+    const res = await fetch(`${API_BASE_URL}/api/stories/${id}/${liked ? 'unlike' : 'like'}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      setLikes(data.likes);
+      setLiked(!liked);
+    }
+  };
 
   if (loading) {
     return (
@@ -137,6 +226,16 @@ const StoryPage = () => {
                   <span className="mr-1">🌐</span>
                   {story.language}
                 </div>
+                <div className="flex items-center ml-4">
+                  <button
+                    onClick={handleLike}
+                    className={`flex items-center px-2 py-1 rounded ${liked ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'} hover:bg-red-200 transition`}
+                    title={liked ? 'Unlike' : 'Like'}
+                  >
+                    <span style={{fontSize: '1.2em', marginRight: 4}}>{liked ? '❤️' : '🤍'}</span>
+                    <span>{likes} Like{likes !== 1 ? 's' : ''}</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -222,6 +321,58 @@ const StoryPage = () => {
                     >
                       Next Chapter
                     </button>
+                  </div>
+
+                  {/* Comments Section */}
+                  <div className="mt-10">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900">Comments</h3>
+                    {commentLoading ? (
+                      <div className="text-gray-500">Loading comments...</div>
+                    ) : commentError ? (
+                      <div className="text-red-500">{commentError}</div>
+                    ) : (
+                      <>
+                        {comments.length === 0 && <div className="text-gray-500 mb-2">No comments yet.</div>}
+                        <ul className="space-y-4 mb-4">
+                          {comments.map((c, idx) => (
+                            <li key={c._id || idx} className="bg-gray-100 rounded p-3">
+                              <div className="font-medium text-gray-800">{c.username || 'User'}</div>
+                              <div className="text-gray-700 text-sm whitespace-pre-line">{c.text}</div>
+                              <div className="text-xs text-gray-400 mt-1">{c.createdAt ? new Date(c.createdAt).toLocaleString() : ''}</div>
+                            </li>
+                          ))}
+                        </ul>
+                        {comments.length >= 3 && !showAllComments && (
+                          <button className="text-blue-600 hover:underline mb-4" onClick={() => setShowAllComments(true)}>
+                            See all comments
+                          </button>
+                        )}
+                        {showAllComments && comments.length > 3 && (
+                          <button className="text-blue-600 hover:underline mb-4" onClick={() => setShowAllComments(false)}>
+                            Show less
+                          </button>
+                        )}
+                      </>
+                    )}
+                    {/* Add Comment Form */}
+                    <form onSubmit={handleAddComment} className="mt-4 flex flex-col gap-2">
+                      <textarea
+                        className="border rounded p-2 w-full min-h-[60px]"
+                        placeholder="Add a comment..."
+                        value={commentText}
+                        onChange={e => setCommentText(e.target.value)}
+                        disabled={commentLoading}
+                        maxLength={500}
+                        required
+                      />
+                      <button
+                        type="submit"
+                        className="self-end bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+                        disabled={commentLoading || !commentText.trim()}
+                      >
+                        {commentLoading ? 'Posting...' : 'Post Comment'}
+                      </button>
+                    </form>
                   </div>
                 </div>
               ) : (

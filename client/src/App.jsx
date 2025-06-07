@@ -11,6 +11,7 @@ import ProfilePage from './pages/ProfilePage';
 import WritePage from './pages/WritePage';
 import InvitationsPage from './pages/InvitationsPage';
 import FavoritesPage from './pages/FavoritesPage';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -31,11 +32,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/write" element={<WritePage />} />
         <Route path="/write/:storyId" element={<WritePage />} />
-        <Route path="*" element={
-          <div className="container-custom py-20 text-center">
-            <h1 className="text-2xl font-bold">Page Not Found</h1>
-          </div>
-        } />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   );

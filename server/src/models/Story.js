@@ -2,13 +2,21 @@ import mongoose from 'mongoose';
 
 const DEFAULT_COVER_URL = process.env.DEFAULT_COVER_URL
 
+const commentSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  username: { type: String, required: true },
+  text: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
 const chapterSchema = new mongoose.Schema({
   title: { type: String, required: true },
   content: { type: String, required: true },
   published: { type: Boolean, default: false },
   publishedAt: { type: Date },
   lastEditedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  lastEditedAt: { type: Date, default: Date.now }
+  lastEditedAt: { type: Date, default: Date.now },
+  comments: { type: [commentSchema], default: [] }
 });
 
 // Schema for active collaborators
@@ -45,7 +53,8 @@ const storySchema = new mongoose.Schema({
   publishedAt: { type: Date },  
   lastPublishedAt: { type: Date },  
   publishedChapters: [Number],  
-  views: { type: Number, default: 0 }  
+  views: { type: Number, default: 0 },
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]  
 }, { timestamps: true });
 
 storySchema.index({ published: 1, category: 1, publishedAt: -1 });
