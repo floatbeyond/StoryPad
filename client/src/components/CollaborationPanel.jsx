@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const CollaborationPanel = ({ storyId, isOwner }) => {
   const [collaborators, setCollaborators] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,7 +32,7 @@ const CollaborationPanel = ({ storyId, isOwner }) => {
       setSearching(true);
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/users/search?query=${encodeURIComponent(searchQuery)}`, {
+        const response = await fetch(`${API_BASE_URL}/api/users/search?query=${encodeURIComponent(searchQuery)}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -55,7 +57,7 @@ const CollaborationPanel = ({ storyId, isOwner }) => {
   const fetchCollaborators = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/stories/${storyId}/collaborators`, {
+      const response = await fetch(`${API_BASE_URL}/api/stories/${storyId}/collaborators`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -108,7 +110,7 @@ const CollaborationPanel = ({ storyId, isOwner }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/stories/${storyId}/invite`, {
+      const response = await fetch(`${API_BASE_URL}/api/stories/${storyId}/invite`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
