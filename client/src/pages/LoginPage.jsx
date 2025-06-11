@@ -22,6 +22,8 @@ const LoginPage = () => {
       if (response.ok) {
         localStorage.setItem("username", result.username); // Save username from backend
         localStorage.setItem("token", result.token); // Save token from backend
+        localStorage.setItem('user', JSON.stringify(data.user)); // Sets user data in local storage
+        console.log('💾 Stored user data:', data.user); // DEBUG
         navigate("/");
       } else {
         setError(result.message || "Login failed");
