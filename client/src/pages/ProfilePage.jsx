@@ -17,7 +17,7 @@ const ProfilePage = () => {
   useEffect(() => {
     const username = localStorage.getItem("username");
     if (username) {
-      fetch(`${API_BASE_URL}/api/users/${username}`)
+      fetch(`${API_BASE_URL}/api/user/${username}`)
         .then((res) => res.json())
         .then((data) => {
           setUserData(data);
