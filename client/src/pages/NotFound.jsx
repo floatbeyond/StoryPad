@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
-import BackButton from '../components/BackButton';
+
 
 const NotFound = () => (
   <div className="min-h-screen bg-gray-50 pt-6">
     {/* התאמה לרוחב ה-navbar – פדינג קבוע */}
     <div className="pl-6 mb-8">
-      <BackButton />
+     
     </div>
 
     {/* תוכן מרכזי */}
