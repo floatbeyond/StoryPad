@@ -364,6 +364,38 @@ const WritePage = () => {
     }
   };
 
+// Handle marking story as complete
+  const handleComplete = async () => {
+  try {
+    if (!storyId || storyId === 'new') {
+      setError('Please save the story before marking it as complete');
+      return;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/stories/${storyId}/complete`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) throw new Error('Failed to mark story as complete');
+
+    const data = await response.json();
+    if (data.success) {
+      setStory({ ...story, completed: true, completedAt: new Date() });
+      setSuccess('Story marked as complete! It can no longer be edited.');
+      navigate(`/story/${storyId}`);
+    }
+  } catch (err) {
+    setError(err.message);
+    console.error('Complete error:', err);
+  }
+};
+
+
+
   // Loading state
   if (loading && (!story || storyId === 'new')) {
     return (
@@ -608,36 +640,48 @@ const WritePage = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4">
-              <button
-                type="button"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 
-                  transition-colors flex items-center space-x-2"
-                onClick={() => handleSave(false)}
-                disabled={saveStatus === 'saving'}
-              >
-                {saveStatus === 'saving' ? (
-                  <>
-                    <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>💾</span>
-                    <span>Save Changes</span>
-                  </>
-                )}
-              </button>
+           <div className="flex gap-4">
+            <button
+              type="button"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 
+                transition-colors flex items-center space-x-2"
+              onClick={() => handleSave(false)}
+              disabled={saveStatus === 'saving' || story?.completed}
+            >
+              {saveStatus === 'saving' ? (
+                <>
+                  <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <span>💾</span>
+                  <span>Save Changes</span>
+                </>
+              )}
+            </button>
               
               <button
                 type="button"
                 className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 
                   transition-colors flex items-center space-x-2"
                 onClick={() => setShowPublishModal(true)}
-                disabled={!storyId || storyId === 'new' || loading}
+                disabled={!storyId || storyId === 'new' || loading || story?.completed}
               >
                 <span>📚</span>
                 <span>Publish Chapters</span>
+              </button>
+
+              
+              <button
+                type="button"
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 
+                  transition-colors flex items-center space-x-2"
+                onClick={handleComplete}
+                disabled={!storyId || storyId === 'new' || loading || story?.completed}
+              >
+                <span>✅</span>
+                <span>Complete Story</span>
               </button>
             </div>
           </div>

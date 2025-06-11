@@ -52,7 +52,9 @@ const storySchema = new mongoose.Schema({
   published: { type: Boolean, default: false },
   publishedAt: { type: Date },  
   lastPublishedAt: { type: Date },  
-  publishedChapters: [Number],  
+  publishedChapters: [Number], 
+  completed: { type: Boolean, default: false }, 
+  completedAt: { type: Date },                 
   views: { type: Number, default: 0 },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]  
 }, { timestamps: true });

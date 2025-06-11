@@ -1,15 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [username, setUsername] = useState(null);
   const [invitationCount, setInvitationCount] = useState(0);
+  const [userRole, setUserRole] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     setUsername(localStorage.getItem('username'));
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+        console.log('👤 User data in localStorage:', user); // DEBUG
+    setUserRole(user.role);
+    
     if (localStorage.getItem('token')) {
       fetchInvitationCount();
     }
@@ -29,7 +36,7 @@ const Navbar = () => {
   const fetchInvitationCount = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/invitations', {
+      const response = await fetch(`${API_BASE_URL}/api/invitations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -51,7 +58,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar sticky top-0 z-10 bg-white border-b shadow-sm">
+    <nav className="navbar sticky top-0 z-50 bg-white border-b shadow-sm">
       <div className="container-custom">
         <div className="flex justify-between items-center py-3">
           {/* Logo */}
@@ -65,7 +72,7 @@ const Navbar = () => {
           <div className="hidden md:flex space-x-8">
             <Link to="/browse" className="text-storypad-text hover:text-storypad-primary transition-colors">Browse</Link>
             <Link to="/categories" className="text-storypad-text hover:text-storypad-primary transition-colors">Categories</Link>
-            <Link to="/favorites" className="text-storypad-text hover:text-storypad-primary transition-colors flex items-center gap-1">My Library</Link>
+            <Link to="/libraryv" className="text-storypad-text hover:text-storypad-primary transition-colors flex items-center gap-1">My Library</Link>
             <Link to="/mystories" className="text-storypad-text hover:text-storypad-primary transition-colors">My Stories</Link>
           </div>
 
@@ -139,6 +146,17 @@ const Navbar = () => {
                         ⚙️ Profile Settings
                       </Link>
 
+                      {/* Admin Link */}
+                      {(userRole === 'admin' || username === 'admin') && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setShowProfileDropdown(false)}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-t border-gray-200"
+                        >
+                          🔧 Admin Dashboard
+                        </Link>
+                      )}
+
                       {/* Divider */}
                       <div className="border-t my-1"></div>
 
@@ -178,8 +196,8 @@ const Navbar = () => {
             <div className="flex flex-col space-y-3">
               <Link to="/browse" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}>Browse</Link>
               <Link to="/categories" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}>Categories</Link>
-              <Link to="/favorites" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}> Favorites</Link>
               <Link to="/mystories" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}>My Stories</Link>
+              <Link to="/library" className="text-storypad-text hover:text-storypad-primary py-2" onClick={() => setIsMenuOpen(false)}>My Library</Link>
 
               <div className="flex flex-col space-y-2 mt-4">
                 {username ? (
@@ -191,6 +209,12 @@ const Navbar = () => {
                       Invitations {invitationCount > 0 && <span className="bg-red-500 text-white text-xs rounded-full px-2 ml-2">{invitationCount}</span>}
                     </Link>
                     <Link to="/profile" className="btn-secondary text-center" onClick={() => setIsMenuOpen(false)}>Profile</Link>
+                    {/* Admin Link */}
+                    {(userRole === 'admin' || username === 'admin') && (
+                      <Link to="/admin" className="btn-secondary text-center" onClick={() => setIsMenuOpen(false)}>
+                        🔧 Admin Dashboard
+                      </Link>
+                    )}
                     <button onClick={handleLogout} className="btn-secondary text-center">Logout</button>
                   </>
                 ) : (

@@ -275,18 +275,28 @@ const StoryCard = ({ story }) => {
         </div>
         
         <div className="flex gap-2">
-          <button
-            onClick={() => navigate(`/write/${story._id}`)}
-            className="btn-primary flex-1 text-sm"
-          >
-            ✍️ Edit
-          </button>
-          <button
-            onClick={() => navigate(`/story/${story._id}`)}
-            className="btn-secondary flex-1 text-sm"
-          >
-            👁️ View
-          </button>
+     {story.completed ? (
+        <button
+          onClick={() => navigate(`/story/${story._id}`)}
+          className="btn-secondary flex-1 text-sm"
+          disabled
+        >
+          ✅ Completed
+        </button>
+      ) : (
+        <button
+          onClick={() => navigate(`/write/${story._id}`)}
+          className="btn-primary flex-1 text-sm"
+        >
+          ✍️ Edit
+        </button>
+      )}
+      <button
+        onClick={() => navigate(`/story/${story._id}`)}
+        className="btn-secondary flex-1 text-sm"
+      >
+        👁️ View
+      </button>
         </div>
       </div>
     </div>
