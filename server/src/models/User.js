@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt'; // CHANGE: bcrypt instead of bcryptjs
 
 const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
@@ -6,8 +7,11 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['user', 'admin'], default: 'user' },
-  // Collaboration preferences
+  role: { 
+    type: String, 
+    enum: ['user', 'admin'], 
+    default: 'user'
+  },
   collaborationSettings: {
     allowInvitations: { type: Boolean, default: true },
     emailNotifications: { type: Boolean, default: true }

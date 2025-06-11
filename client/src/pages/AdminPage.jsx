@@ -132,13 +132,15 @@ const AdminPage = () => {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/import/stats`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/stats`, { // CHANGED: admin/stats instead of import/stats
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
       if (response.ok) {
         const data = await response.json();
         setStats(data.stats);
+      } else {
+        console.error('Failed to fetch stats:', response.status);
       }
     } catch (err) {
       console.error('Error fetching stats:', err);
@@ -209,6 +211,63 @@ const AdminPage = () => {
       setImportLoading(false);
     }
   };
+
+  const importSampleStories = async () => {
+    setImportLoading(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/import/samples`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setSuccess(`✅ Successfully imported ${result.stories.length} sample stories! Assigned to random users: ${result.userPool.map(u => u.username).join(', ')}`);
+        fetchStats();
+        fetchStories();
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      setError(`Error: ${err.message}`);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const importGutenbergBooks = async () => {
+    setImportLoading(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/import/gutenberg`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setSuccess(`✅ Successfully imported ${result.imported.length} classic books! Distributed among users: ${result.userPool.map(u => u.username).join(', ')}`);
+        fetchStats();
+        fetchStories();
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      setError(`Error: ${err.message}`);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
 
   const deleteStory = async (storyId) => {
     if (!confirm('Are you sure you want to delete this story?')) return;
@@ -327,8 +386,8 @@ const AdminPage = () => {
                   <div className="bg-gray-50 rounded-lg p-6">
                     <h3 className="text-lg font-medium text-gray-900 mb-4">Stories by Category</h3>
                     <div className="space-y-2">
-                      {stats.categoriesData.slice(0, 10).map((cat) => (
-                        <div key={cat._id} className="flex items-center justify-between">
+                      {stats.categoriesData.slice(0, 10).map((cat, index) => ( // ADD index to make keys unique
+                        <div key={`${cat._id}-${index}`} className="flex items-center justify-between"> {/* CHANGED: Use category + index as key */}
                           <span className="text-gray-700">{cat._id}</span>
                           <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
                             {cat.count}
@@ -340,68 +399,49 @@ const AdminPage = () => {
                 )}
               </div>
             )}
-
             {/* Import Tab */}
             {activeTab === 'import' && (
               <div className="space-y-6">
                 <h2 className="text-xl font-semibold text-gray-900">Import Datasets</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Project Gutenberg */}
-                  <div className="border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Project Gutenberg</h3>
-                    <p className="text-gray-600 mb-4">Import classic literature from Project Gutenberg's free collection.</p>
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => handleImportDataset('gutenberg', 10)}
-                        disabled={importLoading}
-                        className="w-full btn-primary text-sm disabled:opacity-50"
-                      >
-                        Import 10 Books
-                      </button>
-                      <button
-                        onClick={() => handleImportDataset('gutenberg', 25)}
-                        disabled={importLoading}
-                        className="w-full btn-secondary text-sm disabled:opacity-50"
-                      >
-                        Import 25 Books
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Open Library */}
-                  <div className="border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Open Library</h3>
-                    <p className="text-gray-600 mb-4">Import books by genre from the Internet Archive's Open Library.</p>
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => handleImportDataset('openlibrary', 15)}
-                        disabled={importLoading}
-                        className="w-full btn-primary text-sm disabled:opacity-50"
-                      >
-                        Import 15 Books
-                      </button>
-                      <button
-                        onClick={() => handleImportDataset('openlibrary', 30)}
-                        disabled={importLoading}
-                        className="w-full btn-secondary text-sm disabled:opacity-50"
-                      >
-                        Import 30 Books
-                      </button>
-                    </div>
-                  </div>
-
                   {/* Sample Stories */}
                   <div className="border border-gray-200 rounded-lg p-6">
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Sample Stories</h3>
                     <p className="text-gray-600 mb-4">Add original sample stories for testing and demonstration.</p>
+                    <button
+                      onClick={importSampleStories}
+                      disabled={importLoading}
+                      className="w-full btn-primary disabled:opacity-50"
+                    >
+                      {importLoading ? 'Importing...' : 'Import 5 Sample Stories'}
+                    </button>
+                  </div>
+
+                  {/* Project Gutenberg Classic Books */}
+                  <div className="border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Classic Books</h3>
+                    <p className="text-gray-600 mb-4">Import classic literature from Project Gutenberg's free collection.</p>
+                    <button
+                      onClick={importGutenbergBooks}
+                      disabled={importLoading}
+                      className="w-full btn-primary disabled:opacity-50"
+                    >
+                      {importLoading ? 'Importing...' : 'Import 10 Classic Books'}
+                    </button>
+                  </div>
+
+                  {/* Import via Dataset */}
+                  <div className="border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Bulk Import</h3>
+                    <p className="text-gray-600 mb-4">Import larger datasets with various options.</p>
                     <div className="space-y-2">
                       <button
                         onClick={() => handleImportDataset('sample', 5)}
                         disabled={importLoading}
-                        className="w-full btn-primary text-sm disabled:opacity-50"
+                        className="w-full btn-secondary text-sm disabled:opacity-50"
                       >
-                        Import 5 Stories
+                        Import via Dataset API
                       </button>
                     </div>
                   </div>
@@ -508,8 +548,8 @@ const AdminPage = () => {
                 <h2 className="text-xl font-semibold text-gray-900">Story Management</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {stories.slice(0, 20).map((story) => (
-                    <div key={story._id} className="border border-gray-200 rounded-lg p-4">
+                  {stories.slice(0, 20).map((story, index) => ( // ADD index
+                    <div key={`${story._id}-${index}`} className="border border-gray-200 rounded-lg p-4"> {/* CHANGED: Use story ID + index */}
                       <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
                         {story.title}
                       </h3>
@@ -517,9 +557,9 @@ const AdminPage = () => {
                         by {story.author?.username}
                       </p>
                       <div className="flex flex-wrap gap-1 mb-3">
-                        {story.category?.slice(0, 2).map((cat) => (
+                        {story.category?.slice(0, 2).map((cat, catIndex) => ( // ADD catIndex
                           <span
-                            key={cat}
+                            key={`${story._id}-${cat}-${catIndex}`} // CHANGED: Use story ID + category + index
                             className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs"
                           >
                             {cat}

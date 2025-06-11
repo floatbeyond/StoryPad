@@ -172,21 +172,27 @@ router.delete('/users/:userId', authenticateToken, requireAdmin, async (req, res
 // Get system stats
 router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
   try {
+    // Get total counts
     const totalUsers = await User.countDocuments();
     const totalStories = await Story.countDocuments();
-    const publishedStories = await Story.countDocuments({ published: true });
-    
-    // Recent activity
-    const recentUsers = await User.find({})
-      .sort('-createdAt')
-      .limit(5)
-      .select('username firstName lastName createdAt');
-      
-    const recentStories = await Story.find({})
+    const publishedStories = await Story.countDocuments({ published: true }); 
+
+    // Get stories by category
+    const categoriesData = await Story.aggregate([
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    // Get recent activity
+    const recentStories = await Story.find()
       .populate('author', 'username')
       .sort('-createdAt')
-      .limit(5)
-      .select('title author createdAt');
+      .limit(5);
+
+    const recentUsers = await User.find()
+      .select('username firstName lastName createdAt')
+      .sort('-createdAt')
+      .limit(5);
 
     res.json({
       success: true,
@@ -194,17 +200,58 @@ router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
         totalUsers,
         totalStories,
         publishedStories,
-        recentUsers,
-        recentStories
+        categoriesData,
+        recentStories,
+        recentUsers
       }
     });
 
   } catch (error) {
+    console.error('Error fetching admin stats:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get stats',
+      message: 'Failed to fetch stats',
       error: error.message
     });
+  }
+});
+
+// Simple endpoint to check database contents
+router.get('/check-db', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const allStories = await Story.find({})
+      .populate('author', 'username')
+      .select('title published author createdAt');
+    
+    const allUsers = await User.find({})
+      .select('username email');
+    
+    console.log('🔍 DATABASE CHECK:');
+    console.log(`📚 Total stories: ${allStories.length}`);
+    console.log(`👥 Total users: ${allUsers.length}`);
+    
+    allStories.forEach((story, index) => {
+      console.log(`  ${index + 1}. "${story.title}" by ${story.author?.username || 'Unknown'} (published: ${story.published})`);
+    });
+
+    res.json({
+      success: true,
+      stories: allStories.length,
+      users: allUsers.length,
+      storiesList: allStories.map(s => ({
+        title: s.title,
+        author: s.author?.username,
+        published: s.published,
+        createdAt: s.createdAt
+      })),
+      usersList: allUsers.map(u => ({
+        username: u.username,
+        email: u.email
+      }))
+    });
+  } catch (error) {
+    console.error('❌ Database check error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 

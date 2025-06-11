@@ -6,7 +6,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 // Available categories for stories
 const categories = [
   "Fantasy", "Romance", "Science Fiction", "Mystery", 
-  "Horror", "Adventure", "Historical", "Poetry"
+  "Horror", "Adventure", "Historical", "Poetry", 
+  "Classic Literature", "Dystopian", "Cyberpunk", "Thriller",
 ];
 
 // Supported languages for stories

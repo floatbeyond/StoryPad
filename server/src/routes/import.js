@@ -1,331 +1,430 @@
 import express from 'express';
+import fetch from 'node-fetch';
 import { Story } from '../models/Story.js';
 import { User } from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Import from online datasets
-router.post('/dataset', authenticateToken, async (req, res) => {
+// Admin middleware
+const requireAdmin = async (req, res, next) => {
   try {
-    const { source = 'gutenberg', limit = 20 } = req.body;
+    const user = await User.findById(req.user.id);
+    const isAdmin = user.role === 'admin' || 
+                   user.username === 'admin' || 
+                   user.email === 'admin@storypad.com';
     
-    console.log(`📚 Starting import from ${source} with limit ${limit}`);
+    if (!isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+    next();
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error checking admin access',
+      error: error.message
+    });
+  }
+};
 
-    const users = await User.find({});
+// Helper function to get random users
+const getRandomUsers = async (count = 5) => {
+  try {
+    const users = await User.find({}).select('_id username firstName lastName');
     if (users.length === 0) {
+      throw new Error('No users found in database');
+    }
+    
+    // Shuffle and return up to 'count' users
+    const shuffled = users.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, Math.min(count, users.length));
+  } catch (error) {
+    console.error('Error getting random users:', error);
+    return [];
+  }
+};
+
+// Helper function to get random user from a pool
+const getRandomAuthor = (userPool) => {
+  return userPool[Math.floor(Math.random() * userPool.length)];
+};
+
+// Import books from Project Gutenberg
+router.post('/gutenberg', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    console.log('🚀 Starting Project Gutenberg import...');
+
+    // Get a pool of random users to assign as authors
+    const userPool = await getRandomUsers(10); // Get up to 10 random users
+    if (userPool.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No users found. Create users first.'
+        message: 'No users found to assign as authors'
       });
     }
 
-    const createdStories = [];
+    console.log(`👥 Found ${userPool.length} users to use as authors`);
 
-    if (source === 'gutenberg') {
-      // Import from Project Gutenberg
-      const fetch = (await import('node-fetch')).default;
-      const response = await fetch(`https://gutendex.com/books/?page=1&page_size=${limit}`);
-      const data = await response.json();
+    // List of popular books with their Project Gutenberg IDs
+    const books = [
+      { id: 1342, title: "Pride and Prejudice", author: "Jane Austen" },
+      { id: 11, title: "Alice's Adventures in Wonderland", author: "Lewis Carroll" },
+      { id: 84, title: "Frankenstein", author: "Mary Wollstonecraft Shelley" },
+      { id: 174, title: "The Picture of Dorian Gray", author: "Oscar Wilde" },
+      { id: 345, title: "Dracula", author: "Bram Stoker" },
+      { id: 46, title: "A Christmas Carol", author: "Charles Dickens" },
+      { id: 74, title: "The Adventures of Tom Sawyer", author: "Mark Twain" },
+      { id: 76, title: "Adventures of Huckleberry Finn", author: "Mark Twain" },
+      { id: 1080, title: "A Modest Proposal", author: "Jonathan Swift" },
+      { id: 844, title: "The Importance of Being Earnest", author: "Oscar Wilde" }
+    ];
 
-      console.log(`📖 Found ${data.results.length} books from Project Gutenberg`);
+    const importedBooks = [];
+    const errors = [];
 
-      for (let i = 0; i < data.results.length; i++) {
-        const book = data.results[i];
-        
-        try {
-          // Assign to users in a cycle
-          const assignedUser = users[i % users.length];
-          
-          // Extract and clean up categories
-          const categories = book.subjects.slice(0, 3).map(subject => {
-            if (subject.includes('Fiction')) return 'Fiction';
-            if (subject.includes('Adventure')) return 'Adventure';
-            if (subject.includes('Romance')) return 'Romance';
-            if (subject.includes('Mystery')) return 'Mystery';
-            if (subject.includes('Science')) return 'Science Fiction';
-            if (subject.includes('Historical')) return 'Historical';
-            if (subject.includes('Children')) return 'Young Adult';
-            if (subject.includes('Horror')) return 'Horror';
-            if (subject.includes('Fantasy')) return 'Fantasy';
-            return 'Literature';
-          });
+    // Fix the Gutenberg import loop
+    for (const book of books) {
+      try {
+        console.log(`📚 Importing: ${book.title} by ${book.author}`);
 
-          // Get book text preview
-          const textUrl = book.formats['text/plain; charset=utf-8'] || 
-                         book.formats['text/plain'];
-          
-          let chapterContent = `This is a classic work from Project Gutenberg by ${book.authors.map(a => a.name).join(', ')}. 
+        // Get random author from user pool
+        const randomAuthor = getRandomAuthor(userPool);
+        console.log(`👤 Assigned author: ${randomAuthor.username} (${randomAuthor._id})`);
 
-The story unfolds with compelling characters and an engaging plot that has captivated readers for generations. This timeless piece of literature explores themes that are as relevant today as they were when first written.
-
-The narrative begins with rich descriptions and well-developed characters that draw readers into a world both familiar and extraordinary...`;
-          
-          if (textUrl) {
-            try {
-              const textResponse = await fetch(textUrl);
-              const fullText = await textResponse.text();
-              
-              // Skip Project Gutenberg headers and find actual content
-              const lines = fullText.split('\n');
-              let contentStart = 0;
-              
-              // Find where the actual story starts (after headers)
-              for (let j = 0; j < lines.length; j++) {
-                if (lines[j].includes('START OF THE PROJECT GUTENBERG') || 
-                    lines[j].includes('***START OF THE PROJECT GUTENBERG') ||
-                    (j > 50 && lines[j].trim().length > 100)) {
-                  contentStart = j + 1;
-                  break;
-                }
-              }
-              
-              // Get meaningful content
-              const contentLines = lines.slice(contentStart).filter(line => line.trim().length > 0);
-              if (contentLines.length > 0) {
-                chapterContent = contentLines.slice(0, 10).join('\n\n').substring(0, 1500) + "...\n\n[This is a sample from the full text available in the public domain.]";
-              }
-            } catch (e) {
-              console.log(`Could not fetch full text for "${book.title}"`);
-            }
-          }
-
-          // Check if story already exists
-          const existingStory = await Story.findOne({ 
-            title: book.title,
-            author: assignedUser._id 
-          });
-          
-          if (existingStory) {
-            console.log(`⏭️  Story "${book.title}" already exists`);
-            continue;
-          }
-
-          const story = new Story({
-            title: book.title,
-            description: `A classic work by ${book.authors.map(a => a.name).join(', ')}. ${book.subjects.slice(0, 2).join(', ')}. This timeless story explores themes of human nature, society, and the complexities of life, making it a must-read for literature enthusiasts.`,
-            category: [...new Set(categories)], // Remove duplicates
-            language: book.languages[0] === 'en' ? 'English' : 'Other',
-            author: assignedUser._id,
-            chapters: [{
-              title: "Chapter 1",
-              content: chapterContent,
-              published: true,
-              publishedAt: new Date(),
-              lastEditedBy: assignedUser._id,
-              lastEditedAt: new Date()
-            }],
-            published: true,
-            publishedAt: new Date(),
-            lastPublishedAt: new Date(),
-            publishedChapters: [0],
-            views: Math.floor(Math.random() * 1000) + 100,
-            cover: book.formats['image/jpeg'] ? 
-              `https://www.gutenberg.org/cache/epub/${book.id}/pg${book.id}.cover.medium.jpg` : 
-              process.env.DEFAULT_COVER_URL
-          });
-
-          await story.save();
-          createdStories.push(story);
-          
-          console.log(`✅ Created "${story.title}" for ${assignedUser.username}`);
-          
-          // Small delay to avoid overwhelming the API
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-        } catch (error) {
-          console.error(`❌ Error creating story "${book.title}":`, error.message);
-        }
-      }
-
-    } else if (source === 'openlibrary') {
-      // Import from Open Library
-      const fetch = (await import('node-fetch')).default;
-      const subjects = ['love', 'adventure', 'mystery', 'science_fiction', 'fantasy', 'horror', 'thriller'];
-      
-      for (const subject of subjects.slice(0, Math.ceil(limit / 5))) {
-        try {
-          const response = await fetch(`https://openlibrary.org/subjects/${subject}.json?limit=8`);
-          const data = await response.json();
-
-          for (const book of data.works.slice(0, 3)) {
-            const assignedUser = users[Math.floor(Math.random() * users.length)];
-
-            // Check if already exists
-            const existingStory = await Story.findOne({ 
-              title: book.title,
-              author: assignedUser._id 
-            });
-            
-            if (existingStory) continue;
-
-            const categoryName = subject.charAt(0).toUpperCase() + subject.slice(1).replace('_', ' ');
-            const chapterContent = `This is the beginning of "${book.title}", a compelling ${subject.replace('_', ' ')} story that will take you on an unforgettable journey.
-
-The story unfolds with rich character development and intricate plot lines that keep readers engaged from start to finish. Through masterful storytelling, this work explores the depths of human emotion and the complexities of life.
-
-Each page reveals new layers of meaning, drawing readers deeper into a world where every decision matters and every character has a story to tell...`;
-
-            const story = new Story({
-              title: book.title,
-              description: `A captivating ${subject.replace('_', ' ')} story that explores themes of human nature and adventure. This work has been beloved by readers and continues to inspire new generations with its timeless narrative and memorable characters.`,
-              category: [categoryName],
-              language: 'English',
-              author: assignedUser._id,
-              chapters: [{
-                title: "Chapter 1",
-                content: chapterContent,
-                published: true,
-                publishedAt: new Date(),
-                lastEditedBy: assignedUser._id,
-                lastEditedAt: new Date()
-              }],
-              published: true,
-              publishedAt: new Date(),
-              lastPublishedAt: new Date(),
-              publishedChapters: [0],
-              views: Math.floor(Math.random() * 500) + 50,
-              cover: book.cover_id ? 
-                `https://covers.openlibrary.org/b/id/${book.cover_id}-M.jpg` : 
-                process.env.DEFAULT_COVER_URL
-            });
-
-            await story.save();
-            createdStories.push(story);
-            console.log(`✅ Created "${story.title}" for ${assignedUser.username}`);
-          }
-
-          // Rate limiting
-          await new Promise(resolve => setTimeout(resolve, 500));
-
-        } catch (error) {
-          console.error(`❌ Error fetching ${subject}:`, error.message);
-        }
-      }
-
-    } else if (source === 'sample') {
-      // Create sample stories with rich content
-      const sampleBooks = [
-        {
-          title: "The Digital Nomad's Journey",
-          description: "A modern adventure about remote work and digital entrepreneurship in exotic locations around the world.",
-          category: ["Adventure", "Contemporary"],
-          content: "Sarah stared at her laptop screen, the blue glow illuminating her frustrated face in the dimly lit office cubicle. The fluorescent lights hummed overhead, creating a monotonous soundtrack to her corporate existence. After five years of climbing the corporate ladder, she had reached a breaking point...",
-        },
-        {
-          title: "Midnight in the Library",
-          description: "A spine-chilling horror story about a librarian who discovers that some books come alive after midnight.",
-          category: ["Horror", "Mystery"],
-          content: "Emma had always loved working the night shift at the university library. The quiet halls and empty reading rooms gave her time to think and catch up on her own research. But tonight felt different. Tonight, she could swear she heard whispers coming from the rare books section...",
-        },
-        {
-          title: "Love in the Time of Code",
-          description: "A romantic comedy about two rival software developers forced to work together on a critical project.",
-          category: ["Romance", "Comedy"],
-          content: "Alex couldn't believe it. Of all the developers in the company, they had to pair her with Marcus Chen - the same Marcus who had beaten her to the promotion last year and who insisted on using tabs instead of spaces. This project was going to be a disaster...",
-        },
-        {
-          title: "The Last Dragon Keeper",
-          description: "In a world where dragons are nearly extinct, a young keeper must protect the last dragon egg.",
-          category: ["Fantasy", "Adventure"],
-          content: "Deep in the Whispering Woods, where ancient trees touched the clouds and magic still flowed like rivers of starlight, Kira tended to her most precious charge. The dragon egg pulsed with a warm, golden light, its surface covered in scales that shifted color with each heartbeat...",
-        },
-        {
-          title: "Quantum Hearts",
-          description: "A science fiction romance about physicists whose research brings them together across parallel universes.",
-          category: ["Science Fiction", "Romance"],
-          content: "Dr. Elena Vasquez adjusted the quantum field generator for the hundredth time that morning. The readings were still inconsistent, and her research grant was running out. Little did she know that in a parallel universe, another version of herself was having the exact same problem...",
-        }
-      ];
-
-      for (let i = 0; i < Math.min(sampleBooks.length, limit); i++) {
-        const bookData = sampleBooks[i];
-        const assignedUser = users[i % users.length];
-
+        // Check if book already exists
         const existingStory = await Story.findOne({ 
-          title: bookData.title,
-          author: assignedUser._id 
+          title: book.title
         });
-        
+
         if (existingStory) {
-          console.log(`⏭️  Story "${bookData.title}" already exists`);
+          console.log(`⏭️  Skipping ${book.title} - already exists`);
           continue;
         }
 
+        // Fetch book content from Project Gutenberg
+        const response = await fetch(`https://www.gutenberg.org/files/${book.id}/${book.id}-0.txt`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch book ${book.id}: ${response.statusText}`);
+        }
+
+        let content = await response.text();
+        console.log(`📄 Fetched content: ${content.length} characters`);
+
+        // Clean up the text
+        content = cleanGutenbergText(content);
+        console.log(`🧹 Cleaned content: ${content.length} characters`);
+
+        // Limit content length for demo
+        if (content.length > 50000) {
+          content = content.substring(0, 50000) + '\n\n[Content truncated for demo...]';
+          console.log(`✂️  Truncated content to: ${content.length} characters`);
+        }
+
+        // Split into chapters
+        const chapters = splitIntoChapters(content, book.title);
+        const publishedChapters = chapters.filter(ch => ch.published);
+
+        console.log(`📖 Story structure: ${chapters.length} total chapters, ${publishedChapters.length} published`);
+
+        // Create the story
         const story = new Story({
-          title: bookData.title,
-          description: bookData.description,
-          category: bookData.category,
+          title: book.title,
+          author: randomAuthor._id,
+          published: publishedChapters.length > 0,
+          category: ['Classic Literature'],
           language: 'English',
-          author: assignedUser._id,
-          chapters: [{
-            title: "Chapter 1",
-            content: bookData.content + "\n\n[This is a sample story created for demonstration purposes. Continue reading to see how the story unfolds...]",
-            published: true,
-            publishedAt: new Date(),
-            lastEditedBy: assignedUser._id,
-            lastEditedAt: new Date()
-          }],
-          published: true,
-          publishedAt: new Date(),
-          lastPublishedAt: new Date(),
-          publishedChapters: [0],
-          views: Math.floor(Math.random() * 300) + 25,
-          cover: process.env.DEFAULT_COVER_URL
+          description: `Classic literature by ${book.author}, imported from Project Gutenberg. ${chapters.length} chapters available, ${publishedChapters.length} published.`,
+          chapters: chapters,
+          publishedAt: publishedChapters.length > 0 ? new Date() : null,
+          lastPublishedAt: publishedChapters.length > 0 ? new Date() : null,
+          publishedChapters: chapters.map((ch, idx) => ch.published ? idx : null).filter(idx => idx !== null)
+        });
+
+        console.log(`💾 About to save story: ${story.title}`);
+        console.log(`📊 Story data:`, {
+          title: story.title,
+          author: story.author,
+          published: story.published,
+          chaptersCount: story.chapters.length,
+          publishedChaptersCount: publishedChapters.length
         });
 
         await story.save();
-        createdStories.push(story);
-        console.log(`✅ Created "${story.title}" for ${assignedUser.username}`);
+        console.log(`✅ Successfully saved: ${book.title} (ID: ${story._id})`);
+
+        // Verify the story was saved correctly
+        const verifyStory = await Story.findById(story._id).populate('author', 'username');
+        console.log(`🔍 Verification: Story exists with ${verifyStory.chapters.length} chapters, author: ${verifyStory.author.username}`);
+
+        importedBooks.push({
+          title: book.title,
+          originalAuthor: book.author,
+          storypadAuthor: randomAuthor.username,
+          chaptersCount: chapters.length,
+          publishedChapters: publishedChapters.length,
+          id: story._id
+        });
+
+        // Add delay to avoid overwhelming the server
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+      } catch (error) {
+        console.error(`❌ Error importing ${book.title}:`, error.message);
+        errors.push({
+          title: book.title,
+          error: error.message
+        });
       }
     }
 
+    console.log(`🎉 Import completed! ${importedBooks.length} books imported, ${errors.length} errors`);
+
     res.json({
       success: true,
-      message: `Successfully imported ${createdStories.length} stories from ${source}`,
-      storiesCreated: createdStories.length,
-      source: source,
-      stories: createdStories.map(s => ({ id: s._id, title: s.title, author: s.author }))
+      message: `Successfully imported ${importedBooks.length} books`,
+      imported: importedBooks,
+      errors: errors,
+      totalAttempted: books.length,
+      userPool: userPool.map(u => ({ username: u.username, id: u._id }))
     });
 
   } catch (error) {
-    console.error('❌ Error importing dataset:', error);
+    console.error('❌ Import failed:', error);
     res.status(500).json({
       success: false,
-      message: 'Dataset import failed',
+      message: 'Import failed',
       error: error.message
     });
   }
 });
 
-// Get import status/stats
-router.get('/stats', authenticateToken, async (req, res) => {
-  try {
-    const totalStories = await Story.countDocuments();
-    const publishedStories = await Story.countDocuments({ published: true });
-    const totalUsers = await User.countDocuments();
+// Helper function to clean Project Gutenberg text
+function cleanGutenbergText(text) {
+  // Remove common Project Gutenberg headers and footers
+  let cleaned = text;
+
+  // Remove everything before "*** START OF" marker
+  const startMarker = /\*\*\* START OF .*? \*\*\*/i;
+  const startMatch = cleaned.match(startMarker);
+  if (startMatch) {
+    cleaned = cleaned.substring(cleaned.indexOf(startMatch[0]) + startMatch[0].length);
+  }
+
+  // Remove everything after "*** END OF" marker
+  const endMarker = /\*\*\* END OF .*? \*\*\*/i;
+  const endMatch = cleaned.match(endMarker);
+  if (endMatch) {
+    cleaned = cleaned.substring(0, cleaned.indexOf(endMatch[0]));
+  }
+
+  // Clean up extra whitespace
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+  cleaned = cleaned.trim();
+
+  return cleaned;
+}
+
+// Helper function to split content into chapters
+// Fix the splitIntoChapters function
+const splitIntoChapters = (content, title) => {
+  console.log(`📖 Splitting "${title}" into chapters, content length: ${content.length}`);
+  
+  const chapterMarkers = [
+    /CHAPTER [IVX\d]+\.?\s*\n/gi,
+    /Chapter [IVX\d]+\.?\s*\n/gi,
+    /\n\n\d+\.\s*/g,
+    /\n\n[IVX]+\.\s*/g
+  ];
+
+  let chapters = [];
+
+  // Try each marker to find chapter breaks
+  for (const marker of chapterMarkers) {
+    const matches = [...content.matchAll(marker)];
+    if (matches.length > 1) {
+      console.log(`📝 Found ${matches.length} chapters using marker: ${marker}`);
+      chapters = content.split(marker).filter(ch => ch.trim().length > 100);
+      break;
+    }
+  }
+
+  // If no chapters found, split by length (every ~5000 words)
+  if (chapters.length <= 1) {
+    console.log('📝 No chapter markers found, splitting by word count');
+    const words = content.split(/\s+/);
+    const wordsPerChapter = 5000;
+    chapters = [];
     
-    // Stories by category
-    const categoriesData = await Story.aggregate([
-      { $unwind: '$category' },
-      { $group: { _id: '$category', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
+    for (let i = 0; i < words.length; i += wordsPerChapter) {
+      const chapterWords = words.slice(i, i + wordsPerChapter);
+      if (chapterWords.length > 100) { // Only add substantial chapters
+        chapters.push(chapterWords.join(' '));
+      }
+    }
+  }
+
+  // Ensure we have at least one chapter
+  if (chapters.length === 0) {
+    console.log('📝 Creating single chapter from all content');
+    chapters = [content];
+  }
+
+  console.log(`📚 Created ${chapters.length} chapters for "${title}"`);
+
+  // Format chapters properly with consistent random publishing
+  return chapters.map((chapterContent, index) => {
+    const shouldPublish = index === 0 || Math.random() > 0.3; // Always publish first chapter, 70% chance for others
+    const chapter = {
+      title: `Chapter ${index + 1}`,
+      content: chapterContent.trim(),
+      wordCount: chapterContent.trim().split(/\s+/).length,
+      published: shouldPublish,
+      publishedAt: shouldPublish ? new Date() : null
+    };
+    
+    console.log(`  Chapter ${index + 1}: ${chapter.wordCount} words, published: ${chapter.published}`);
+    return chapter;
+  });
+};
+
+// Helper function for sample story chapters (move outside the loop)
+const createSampleChapters = (content, storyTitle) => {
+  // Split longer sample stories into 2-3 chapters
+  const sentences = content.split(/(?<=[.!?])\s+/);
+  const chaptersCount = Math.min(3, Math.max(1, Math.floor(sentences.length / 3)));
+  
+  const chapters = [];
+  const sentencesPerChapter = Math.ceil(sentences.length / chaptersCount);
+  
+  for (let i = 0; i < chaptersCount; i++) {
+    const chapterSentences = sentences.slice(i * sentencesPerChapter, (i + 1) * sentencesPerChapter);
+    const chapterContent = chapterSentences.join(' ');
+    
+    // Consistent publishing logic
+    const shouldPublish = i === 0 || Math.random() > 0.4; // Always publish first chapter, 60% chance for others
+    
+    chapters.push({
+      title: chaptersCount === 1 ? 'Full Story' : `Chapter ${i + 1}`,
+      content: chapterContent,
+      wordCount: chapterContent.split(/\s+/).length,
+      published: shouldPublish,
+      publishedAt: shouldPublish ? new Date() : null
+    });
+  }
+  
+  return chapters;
+};
+
+// Import sample stories (move createSampleChapters outside the loop)
+router.post('/samples', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    console.log('🚀 Creating sample stories...');
+
+    // Get a pool of random users to assign as authors
+    const userPool = await getRandomUsers(5);
+    if (userPool.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No users found to assign as authors'
+      });
+    }
+
+    console.log(`👥 Found ${userPool.length} users for sample stories`);
+
+    const sampleStories = [
+      {
+        title: "The Time Traveler's Dilemma",
+        content: "Dr. Sarah Chen stared at the temporal displacement device humming softly on her laboratory bench. Three years of research had led to this moment. The machine could send her back exactly 24 hours, but the quantum equations suggested catastrophic consequences if she encountered her past self.\n\n'Every choice creates a ripple,' she whispered, remembering her mentor's words. But with the asteroid approaching Earth, did she have any choice at all?\n\nShe placed her hand on the activation switch...",
+        category: "Science Fiction",
+        tags: ["time travel", "sci-fi", "thriller"]
+      },
+      {
+        title: "The Last Bookbinder",
+        content: "In a world where digital screens had replaced paper, Elena was the last person who knew the ancient art of bookbinding. Her small shop, tucked away in the forgotten corners of New Prague, contained the final physical books on Earth.\n\nWhen the government agents arrived to confiscate her 'contraband,' Elena clutched the leather-bound diary that held the secrets of her craft. Some knowledge, she believed, was too precious to digitize.\n\n'Books aren't just words,' she told them. 'They're time machines, dreams, and the weight of human thought in your hands.'",
+        category: "Dystopian",
+        tags: ["books", "dystopian", "rebellion"]
+      },
+      {
+        title: "Coffee Shop Chronicles",
+        content: "The bell above Giuseppe's Café chimed as Maria entered, shaking raindrops from her coat. She'd been coming here every Tuesday for three months, always ordering the same thing: medium cappuccino, extra foam, no sugar.\n\nWhat she didn't know was that David, the barista with the kind eyes, had been writing her name differently on each cup, hoping she'd notice. Today's cup read 'Mária' with an accent, like his grandmother used to write it.\n\nWhen Maria saw the cup, she looked up and smiled. 'That's beautiful. What does it mean?'",
+        category: "Romance",
+        tags: ["romance", "coffee", "contemporary"]
+      },
+      {
+        title: "The Digital Ghost",
+        content: "Maya discovered the old laptop in her grandmother's attic, its screen flickering with messages from someone claiming to be trapped inside the internet. At first, she thought it was a prank or malware. But when the messages started revealing family secrets that only her grandmother knew, Maya realized she might be communicating with something far more extraordinary.\n\n'Help me remember,' the messages pleaded. 'I'm losing myself in the data streams.'",
+        category: "Mystery",
+        tags: ["technology", "supernatural", "family"]
+      },
+      {
+        title: "The Memory Merchant",
+        content: "In the bustling markets of Neo-Bangkok, Kai sold memories like others sold spices. A first kiss for fifty credits, a childhood summer for a hundred. But when a mysterious client offered him a fortune for a memory that didn't exist yet, Kai found himself caught between the past he'd forgotten and a future he'd never imagined.\n\n'Some memories,' his mentor had warned, 'are worth more than gold. Others will cost you your soul.'",
+        category: "Cyberpunk",
+        tags: ["cyberpunk", "memory", "noir"]
+      }
+    ];
+
+    const importedStories = [];
+
+    for (const storyData of sampleStories) {
+      // Get random author from user pool
+      const randomAuthor = getRandomAuthor(userPool);
+
+      // Check if story already exists
+      const existingStory = await Story.findOne({ 
+        title: storyData.title
+      });
+
+      if (existingStory) {
+        console.log(`⏭️  Skipping ${storyData.title} - already exists`);
+        continue;
+      }
+
+      const chapters = createSampleChapters(storyData.content, storyData.title);
+      const publishedChapters = chapters.filter(ch => ch.published);
+
+      console.log(`📖 ${storyData.title}: Created ${chapters.length} chapters, ${publishedChapters.length} published`);
+
+      const story = new Story({
+        title: storyData.title,
+        author: randomAuthor._id,
+        published: publishedChapters.length > 0,
+        category: storyData.category ? [storyData.category] : ['Fiction'],
+        language: 'English',
+        description: `${storyData.content.substring(0, 150)}... (${chapters.length} chapters)`,
+        chapters: chapters,
+        publishedAt: publishedChapters.length > 0 ? new Date() : null,
+        lastPublishedAt: publishedChapters.length > 0 ? new Date() : null,
+        publishedChapters: chapters.map((ch, idx) => ch.published ? idx : null).filter(idx => idx !== null)
+      });
+
+      await story.save();
+      importedStories.push({
+        title: story.title,
+        author: randomAuthor.username,
+        chaptersTotal: chapters.length,
+        chaptersPublished: publishedChapters.length,
+        id: story._id
+      });
+      console.log(`✅ Created sample story: ${storyData.title} (by ${randomAuthor.username}) - ${publishedChapters.length}/${chapters.length} chapters published`);
+    }
 
     res.json({
       success: true,
-      stats: {
-        totalStories,
-        publishedStories,
-        totalUsers,
-        categoriesData
-      }
+      message: `Successfully created ${importedStories.length} sample stories`,
+      stories: importedStories,
+      userPool: userPool.map(u => ({ username: u.username, id: u._id }))
     });
 
   } catch (error) {
+    console.error('❌ Sample creation failed:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get import stats',
+      message: 'Sample creation failed',
       error: error.message
     });
   }

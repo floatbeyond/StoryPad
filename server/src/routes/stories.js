@@ -63,25 +63,45 @@ router.post('/', authenticateToken, upload.single('cover'), async (req, res) => 
   }
 });
 
-// Get all published stories
+// Get all published stories (stories with at least one published chapter)
 router.get('/published', async (req, res) => {
   try {
+    console.log('📚 Fetching stories with published chapters...');
+    
     const stories = await Story.find({ 
-      published: true,
-      'chapters.published': true 
+      published: true, // Story is marked as published
+      'chapters.published': true // AND has at least one published chapter
     })
-    .populate('author', 'username')
-    .select('title description category language author publishedAt chapters cover completed')
-    .sort('-lastPublishedAt');
+    .populate('author', 'username firstName lastName')
+    .select('title description category language author publishedAt chapters cover completed views likes')
+    .sort('-lastPublishedAt -publishedAt -createdAt');
 
-    const processedStories = stories.map(story => ({
-      ...story.toObject(),
-      chapters: story.chapters.filter(ch => ch.published)
-    }));
+    // Process stories to only show published chapters and add chapter stats
+    const processedStories = stories.map(story => {
+      const publishedChapters = story.chapters.filter(ch => ch.published);
+      const totalChapters = story.chapters.length;
+      
+      return {
+        ...story.toObject(),
+        chapters: publishedChapters, // Only show published chapters
+        chapterStats: {
+          published: publishedChapters.length,
+          total: totalChapters,
+          status: publishedChapters.length === totalChapters ? 'Complete' : 'Ongoing'
+        },
+        latestChapter: publishedChapters.length > 0 ? {
+          title: publishedChapters[publishedChapters.length - 1].title,
+          publishedAt: publishedChapters[publishedChapters.length - 1].publishedAt
+        } : null
+      };
+    });
 
-    console.log('📚 Sending stories with covers:', processedStories.map(s => ({ 
-      title: s.title, 
-      cover: s.cover 
+    console.log(`📊 Found ${stories.length} stories with published chapters`);
+    console.log('📝 Sample stories:', processedStories.slice(0, 3).map(s => ({
+      title: s.title,
+      author: s.author.username,
+      publishedChapters: s.chapterStats.published,
+      totalChapters: s.chapterStats.total
     })));
 
     res.json({
@@ -90,7 +110,7 @@ router.get('/published', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching published stories:', error);
+    console.error('❌ Error fetching published stories:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch published stories',
