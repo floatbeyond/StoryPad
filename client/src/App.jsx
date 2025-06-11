@@ -10,9 +10,9 @@ import MyStoriesPage from './pages/MyStoriesPage';
 import ProfilePage from './pages/ProfilePage';
 import WritePage from './pages/WritePage';
 import InvitationsPage from './pages/InvitationsPage';
-import FavoritesPage from './pages/FavoritesPage';
 import AdminPage from './pages/AdminPage';
 import NotFound from './pages/NotFound';
+import MyLibraryPage from './pages/MyLibraryPage';
 
 function App() {
   return (
@@ -26,7 +26,6 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/story/:id" element={<StoryPage />} />
         <Route path="/browse" element={<BrowsePage />} />
-        <Route path="/favorites" element={<FavoritesPage />} />
         <Route path="/invitations" element={<InvitationsPage />} />
         <Route path="/newwrite" element={<NewWritePage />} />
         <Route path="/mystories" element={<MyStoriesPage />} />
@@ -34,6 +33,7 @@ function App() {
         <Route path="/write" element={<WritePage />} />
         <Route path="/write/:storyId" element={<WritePage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/library" element={<MyLibraryPage />} />
 
         {/* Catch-all for 404 Not Found */}
         <Route path="*" element={<NotFound />} />

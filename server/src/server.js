@@ -11,7 +11,7 @@ import storyRoutes from './routes/stories.js';
 import userRoutes from './routes/users.js';
 import importRoutes from './routes/import.js';
 import adminRoutes from './routes/admin.js';
-
+import readingProgressRoutes from './routes/reading-progress.js';
 
 // Load environment variables
 dotenv.config();
@@ -58,6 +58,7 @@ app.use('/api/stories', storyRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/import', importRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/reading-progress', readingProgressRoutes);
 
 // Legacy endpoints for backward compatibility
 app.get('/api/invitations', (req, res) => {

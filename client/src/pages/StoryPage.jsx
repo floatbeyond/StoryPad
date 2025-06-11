@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 
 const StoryPage = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const [story, setStory] = useState(null);
   const [currentChapter, setCurrentChapter] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,6 +15,7 @@ const StoryPage = () => {
   const [commentError, setCommentError] = useState(null);
   const [likes, setLikes] = useState(0);
   const [liked, setLiked] = useState(false);
+  const [scrollPosition, setScrollPosition] = useState(0);
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -126,6 +128,83 @@ const StoryPage = () => {
       setLiked(!liked);
     }
   };
+
+  // Track reading progress
+  const updateReadingProgress = async (chapterId, chapterIndex) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return; // Don't track for unauthenticated users
+
+      await fetch(`${API_BASE_URL}/api/reading-progress/${id}/progress`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          chapterId,
+          chapterIndex,
+          scrollPosition: window.scrollY
+        })
+      });
+    } catch (err) {
+      console.error('Failed to update reading progress:', err);
+    }
+  };
+
+  // Update progress when chapter changes
+  useEffect(() => {
+    if (currentChapter && story) {
+      const publishedChapters = story.chapters.filter(ch => ch.published);
+      const chapterIndex = publishedChapters.findIndex(ch => ch._id === currentChapter._id);
+      if (chapterIndex !== -1) {
+        updateReadingProgress(currentChapter._id, chapterIndex);
+      }
+    }
+  }, [currentChapter, story, id]);
+
+  // Restore reading position from URL params
+  useEffect(() => {
+    const chapterParam = searchParams.get('chapter');
+    const scrollParam = searchParams.get('scroll');
+    
+    if (story && chapterParam) {
+      const targetChapter = story.chapters.find(ch => ch._id === chapterParam);
+      if (targetChapter && targetChapter.published) {
+        setCurrentChapter(targetChapter);
+        
+        if (scrollParam) {
+          setTimeout(() => {
+            window.scrollTo(0, parseInt(scrollParam));
+          }, 100);
+        }
+      }
+    }
+  }, [story, searchParams]);
+
+  // Track scroll position periodically
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollPosition(window.scrollY);
+    };
+
+    const interval = setInterval(() => {
+      if (currentChapter && story) {
+        const publishedChapters = story.chapters.filter(ch => ch.published);
+        const chapterIndex = publishedChapters.findIndex(ch => ch._id === currentChapter._id);
+        if (chapterIndex !== -1) {
+          updateReadingProgress(currentChapter._id, chapterIndex);
+        }
+      }
+    }, 30000); // Update every 30 seconds
+
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearInterval(interval);
+    };
+  }, [currentChapter, story, id]);
 
   if (loading) {
     return (
