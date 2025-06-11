@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -29,7 +31,7 @@ const Navbar = () => {
   const fetchInvitationCount = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/invitations', {
+      const response = await fetch(`${API_BASE_URL}/api/invitations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -139,6 +141,17 @@ const Navbar = () => {
                         ⚙️ Profile Settings
                       </Link>
 
+                      {/* Admin Link */}
+                      {username === 'admin' && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setShowProfileDropdown(false)}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-t border-gray-200"
+                        >
+                          🔧 Admin Dashboard
+                        </Link>
+                      )}
+
                       {/* Divider */}
                       <div className="border-t my-1"></div>
 
@@ -191,6 +204,12 @@ const Navbar = () => {
                       Invitations {invitationCount > 0 && <span className="bg-red-500 text-white text-xs rounded-full px-2 ml-2">{invitationCount}</span>}
                     </Link>
                     <Link to="/profile" className="btn-secondary text-center" onClick={() => setIsMenuOpen(false)}>Profile</Link>
+                    {/* Admin Link - ADD THIS */}
+                    {username === 'admin' && (
+                      <Link to="/admin" className="btn-secondary text-center" onClick={() => setIsMenuOpen(false)}>
+                        🔧 Admin Dashboard
+                      </Link>
+                    )}
                     <button onClick={handleLogout} className="btn-secondary text-center">Logout</button>
                   </>
                 ) : (

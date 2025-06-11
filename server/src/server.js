@@ -9,15 +9,17 @@ import { initializeSocket } from './config/socket.js';
 import authRoutes from './routes/auth.js';
 import storyRoutes from './routes/stories.js';
 import userRoutes from './routes/users.js';
+import importRoutes from './routes/import.js';
+import adminRoutes from './routes/admin.js';
+
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app); // Create HTTP server for Socket.io
 const PORT = process.env.PORT || 5000;
 
-// Create HTTP server for Socket.io
-const server = http.createServer(app);
 
 // Initialize Socket.io
 initializeSocket(server);
@@ -54,6 +56,8 @@ app.get('/', (req, res) => {
 app.use('/api', authRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/import', importRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Legacy endpoints for backward compatibility
 app.get('/api/invitations', (req, res) => {

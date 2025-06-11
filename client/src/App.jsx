@@ -11,6 +11,7 @@ import ProfilePage from './pages/ProfilePage';
 import WritePage from './pages/WritePage';
 import InvitationsPage from './pages/InvitationsPage';
 import FavoritesPage from './pages/FavoritesPage';
+import AdminPage from './pages/AdminPage';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -32,6 +33,9 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/write" element={<WritePage />} />
         <Route path="/write/:storyId" element={<WritePage />} />
+        <Route path="/admin" element={<AdminPage />} />
+
+        {/* Catch-all for 404 Not Found */}
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
