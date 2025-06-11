@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../components/BackButton';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -110,6 +111,7 @@ const InvitationsPage = () => {
   return (
     <div className="container-custom py-8">
       <div className="flex items-center justify-between mb-6">
+        <BackButton />
         <h1 className="text-3xl font-bold">Collaboration Invitations</h1>
         <button 
           onClick={fetchInvitations}

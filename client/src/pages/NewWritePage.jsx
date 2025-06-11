@@ -1,15 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useRef } from "react";
+import BackButton from '../components/BackButton';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// Available categories for stories
 const categories = [
   "Fantasy", "Romance", "Science Fiction", "Mystery", 
   "Horror", "Adventure", "Historical", "Poetry"
 ];
 
-// Supported languages for stories
 const languages = [
   "עברית", "English", "Español", "Français", "Русский", "العربية"
 ];
@@ -26,16 +25,14 @@ const NewWritePage = () => {
   const [coverImage, setCoverImage] = useState(DEFAULT_COVER);
   const [imageFile, setImageFile] = useState(null);
 
-  // Handle category selection
   const handleCategoryChange = (category) => {
     setSelectedCategories(prev => 
       prev.includes(category)
-        ? prev.filter(cat => cat !== category) // Remove category if already selected
-        : [...prev, category] // Add category if not selected
+        ? prev.filter(cat => cat !== category)
+        : [...prev, category]
     );
   };
 
-  // Handle image file selection
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -48,7 +45,6 @@ const NewWritePage = () => {
     }
   };
 
-  // Handle form submission and story creation
   const handleCreateStory = async (e) => {
     e.preventDefault();
     setError(null);
@@ -57,8 +53,6 @@ const NewWritePage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      console.log('Token from localStorage:', token); // DEBUG
-
       if (!token) {
         setError("You must be logged in to create a story");
         navigate('/login');
@@ -77,7 +71,6 @@ const NewWritePage = () => {
         formData.append('cover', imageFile);
       }
 
-      // Validate required fields
       if (!form.title.value || !form.description.value || !form.language.value || selectedCategories.length === 0) {
         setError("Please fill in all fields and select at least one category.");
         setIsLoading(false);
@@ -87,14 +80,13 @@ const NewWritePage = () => {
       const response = await fetch(`${API_BASE_URL}/api/stories`, {
         method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`  // שים לב לפורמט המדויק
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       });
 
       if (response.status === 401) {
         setError("Session expired. Please log in again.");
-        // Optional: Redirect to login
         navigate('/login');
         return;
       }
@@ -121,34 +113,37 @@ const NewWritePage = () => {
 
   return (
     <div className="container-custom py-12">
-      <h1 className="text-3xl font-bold text-storypad-dark mb-6">
-        Start Writing Your Story
-      </h1>
+      {/* 👇 כותרת עם כפתור מיושר כמו בדף Browse */}
+      <div className="flex items-center justify-between mb-6 px-4">
+        <BackButton />
+        <h1 className="text-3xl font-bold text-center flex-1 text-storypad-dark">
+          Start Writing Your Story
+        </h1>
+        <div className="w-24" />
+      </div>
+
       <form className="space-y-6" ref={formRef}>
-        {/* Add this new image upload section */}
-      <div>
-        <label className="block text-sm font-medium text-storypad-dark mb-2">
-          Cover Image
-        </label>
-        <div className="mt-1 flex items-center space-x-4">
-          <div className="w-32 h-32 relative border rounded overflow-hidden">
-            <img
-              src={coverImage}
-              alt="Cover preview"
-              className="w-full h-full object-cover"
+        <div>
+          <label className="block text-sm font-medium text-storypad-dark mb-2">Cover Image</label>
+          <div className="mt-1 flex items-center space-x-4">
+            <div className="w-32 h-32 relative border rounded overflow-hidden">
+              <img
+                src={coverImage}
+                alt="Cover preview"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0
+                file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100"
             />
           </div>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0
-              file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700
-              hover:file:bg-blue-100"
-          />
         </div>
-      </div>
-        {/* Form Fields */}
+
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-storypad-dark">
             Story Title
@@ -162,6 +157,7 @@ const NewWritePage = () => {
             placeholder="Enter your story title"
           />
         </div>
+
         <div>
           <label htmlFor="description" className="block text-sm font-medium text-storypad-dark">
             Description
@@ -175,27 +171,25 @@ const NewWritePage = () => {
             placeholder="Write a brief description of your story"
           />
         </div>
-    <div>
-      <label htmlFor="language" className="block text-sm font-medium text-storypad-dark mb-2">
-        Language
-      </label>
-      <select
-        id="language"
-        name="language"
-        required
-        className="input w-full mt-1"
-      >
-        <option value="">Select a language</option>
-        {languages.map((lang) => (
-          <option key={lang} value={lang}>
-            {lang}
-          </option>
-        ))}
-      </select>
-    </div>
-       <div>
-          <label className="block text-sm font-medium text-storypad-dark mb-2">
+
+        <div>
+          <label htmlFor="language" className="block text-sm font-medium text-storypad-dark mb-2">
+            Language
           </label>
+          <select
+            id="language"
+            name="language"
+            required
+            className="input w-full mt-1"
+          >
+            <option value="">Select a language</option>
+            {languages.map((lang) => (
+              <option key={lang} value={lang}>{lang}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
             {categories.map((category) => (
               <label 
@@ -223,7 +217,6 @@ const NewWritePage = () => {
           )}
         </div>
 
-        {/* Error and Success Messages */}
         {error && <p className="text-red-500 text-sm">{error}</p>}
         {success && <p className="text-green-500 text-sm">{success}</p>}
 

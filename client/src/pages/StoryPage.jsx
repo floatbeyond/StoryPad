@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import BackButton from '../components/BackButton';
+
 
 const StoryPage = () => {
   const { id } = useParams();
@@ -170,6 +172,7 @@ const StoryPage = () => {
   return (
     <div className="bg-gray-50 min-h-screen pb-12">
       {/* Story Header */}
+      <BackButton />
       <div className="relative">
         <div className="h-80 w-full overflow-hidden">
           <img
@@ -179,6 +182,11 @@ const StoryPage = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
         </div>
+        <div className="p-4">
+ 
+  {/* שאר הדף שלך */}
+</div>
+
 
         <div className="container-custom relative -mt-40 z-10 pb-6">
           <div className="flex flex-col md:flex-row gap-6">

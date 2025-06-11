@@ -186,6 +186,7 @@ const HomePage = () => {
       <section className="bg-gradient-to-r from-storypad-primary to-storypad-dark text-white py-16">
         <div className="container-custom">
           <div className="max-w-2xl">
+            
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Discover Stories That Move You</h1>
             <p className="text-xl mb-6">
               StoryPad is the home for great stories and the people who write them. Join our community of storytellers.
