@@ -8,10 +8,14 @@ const Navbar = () => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [username, setUsername] = useState(null);
   const [invitationCount, setInvitationCount] = useState(0);
+  const [userRole, setUserRole] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     setUsername(localStorage.getItem('username'));
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    setUserRole(user.role); // ADD THIS
+    
     if (localStorage.getItem('token')) {
       fetchInvitationCount();
     }
@@ -142,7 +146,7 @@ const Navbar = () => {
                       </Link>
 
                       {/* Admin Link */}
-                      {username === 'admin' && (
+                      {(userRole === 'admin' || username === 'admin') && (
                         <Link
                           to="/admin"
                           onClick={() => setShowProfileDropdown(false)}
@@ -204,8 +208,8 @@ const Navbar = () => {
                       Invitations {invitationCount > 0 && <span className="bg-red-500 text-white text-xs rounded-full px-2 ml-2">{invitationCount}</span>}
                     </Link>
                     <Link to="/profile" className="btn-secondary text-center" onClick={() => setIsMenuOpen(false)}>Profile</Link>
-                    {/* Admin Link - ADD THIS */}
-                    {username === 'admin' && (
+                    {/* Admin Link */}
+                    {(userRole === 'admin' || username === 'admin') && (
                       <Link to="/admin" className="btn-secondary text-center" onClick={() => setIsMenuOpen(false)}>
                         🔧 Admin Dashboard
                       </Link>
