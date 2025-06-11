@@ -70,7 +70,7 @@ router.get('/published', async (req, res) => {
       'chapters.published': true 
     })
     .populate('author', 'username')
-    .select('title description category language author publishedAt chapters cover')
+    .select('title description category language author publishedAt chapters cover completed')
     .sort('-lastPublishedAt');
 
     const processedStories = stories.map(story => ({
