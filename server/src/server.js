@@ -20,7 +20,6 @@ const app = express();
 const server = http.createServer(app); // Create HTTP server for Socket.io
 const PORT = process.env.PORT || 5000;
 
-
 // Initialize Socket.io
 initializeSocket(server);
 
@@ -63,6 +62,15 @@ app.use('/api/reading-progress', readingProgressRoutes);
 // Legacy endpoints for backward compatibility
 app.get('/api/invitations', (req, res) => {
   res.json({ invitations: [] });
+});
+
+// Add this to catch unknown POST requests
+app.use('/', (req, res, next) => {
+  if (req.path === '/' && req.method === 'POST') {
+    console.log('❌ Unknown POST request to root:', req.headers, req.body);
+    return res.status(404).json({ error: 'Endpoint not found' });
+  }
+  next();
 });
 
 // Connect to DB and start server

@@ -8,6 +8,7 @@ const MyLibraryPage = () => {
   const [readingProgress, setReadingProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [removing, setRemoving] = useState(null); // Track which story is being removed
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -72,6 +73,37 @@ const MyLibraryPage = () => {
     navigate(`/story/${progress.story._id}?chapter=${progress.currentChapter}&scroll=${progress.scrollPosition}`);
   };
 
+  const handleRemoveFromLibrary = async (storyId, storyTitle) => {
+    if (!confirm(`Are you sure you want to remove "${storyTitle}" from your library? This will delete your reading progress.`)) {
+      return;
+    }
+
+    setRemoving(storyId);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/reading-progress/${storyId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        // Remove the story from the local state
+        setReadingProgress(prev => prev.filter(p => p.story._id !== storyId));
+      } else {
+        throw new Error(result.message || 'Failed to remove story from library');
+      }
+    } catch (err) {
+      console.error('Error removing story from library:', err);
+      alert('Failed to remove story from library. Please try again.');
+    } finally {
+      setRemoving(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container-custom py-8">
@@ -87,9 +119,23 @@ const MyLibraryPage = () => {
     <div className="container-custom py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-gray-900">My Library</h1>
-        <Link to="/browse" className="btn-primary">
-          📚 Browse Stories
-        </Link>
+        <div className="flex gap-2">
+          {readingProgress.length > 0 && (
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to clear your entire library? This will remove all reading progress.')) {
+                  handleClearAllProgress();
+                }
+              }}
+              className="btn-secondary text-sm"
+            >
+              🗑️ Clear All
+            </button>
+          )}
+          <Link to="/browse" className="btn-primary">
+            📚 Browse Stories
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -118,41 +164,94 @@ const MyLibraryPage = () => {
               key={progress._id} 
               progress={progress} 
               onContinueReading={handleContinueReading}
+              onRemoveFromLibrary={handleRemoveFromLibrary}
               formatLastRead={formatLastRead}
               getProgressPercentage={getProgressPercentage}
+              isRemoving={removing === progress.story._id}
             />
           ))}
         </div>
       )}
     </div>
   );
+
+  // Helper function to clear all progress
+  async function handleClearAllProgress() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/reading-progress/clear-all`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setReadingProgress([]);
+      } else {
+        throw new Error(result.message || 'Failed to clear library');
+      }
+    } catch (err) {
+      console.error('Error clearing library:', err);
+      alert('Failed to clear library. Please try again.');
+    }
+  }
 };
 
-const ReadingProgressCard = ({ progress, onContinueReading, formatLastRead, getProgressPercentage }) => {
+const ReadingProgressCard = ({ 
+  progress, 
+  onContinueReading, 
+  onRemoveFromLibrary, 
+  formatLastRead, 
+  getProgressPercentage, 
+  isRemoving 
+}) => {
   const story = progress.story;
   const progressPercentage = getProgressPercentage(progress);
   const publishedChapters = story.chapters.filter(ch => ch.published);
   const currentChapterTitle = publishedChapters[progress.chapterIndex]?.title || 'Chapter';
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 relative">
+      {isRemoving && (
+        <div className="absolute inset-0 bg-white bg-opacity-75 rounded-lg flex items-center justify-center z-10">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+        </div>
+      )}
+      
       <div className="p-6">
-        <div className="flex items-start space-x-4 mb-4">
-          <div className="w-16 h-20 flex-shrink-0">
-            <img
-              src={story.cover || DEFAULT_COVER}
-              alt={story.title}
-              className="w-full h-full object-cover rounded"
-            />
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-start space-x-4 flex-1">
+            <div className="w-16 h-20 flex-shrink-0">
+              <img
+                src={story.cover || DEFAULT_COVER}
+                alt={story.title}
+                className="w-full h-full object-cover rounded"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-1">
+                {story.title}
+              </h3>
+              <p className="text-sm text-gray-600">
+                by {story.author.username}
+              </p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-1">
-              {story.title}
-            </h3>
-            <p className="text-sm text-gray-600">
-              by {story.author.username}
-            </p>
-          </div>
+          
+          {/* Remove button */}
+          <button
+            onClick={() => setShowRemoveConfirm(true)}
+            disabled={isRemoving}
+            className="text-gray-400 hover:text-red-600 transition-colors p-1 ml-2"
+            title="Remove from library"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
         </div>
 
         <div className="mb-4">
@@ -179,6 +278,7 @@ const ReadingProgressCard = ({ progress, onContinueReading, formatLastRead, getP
         <div className="flex gap-2">
           <button
             onClick={() => onContinueReading(progress)}
+            disabled={isRemoving}
             className="btn-primary flex-1 text-sm"
           >
             📖 Continue Reading
@@ -191,6 +291,35 @@ const ReadingProgressCard = ({ progress, onContinueReading, formatLastRead, getP
           </Link>
         </div>
       </div>
+
+      {/* Remove confirmation modal */}
+      {showRemoveConfirm && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center z-20">
+          <div className="bg-white p-4 rounded-lg max-w-xs mx-4">
+            <h4 className="font-semibold text-gray-900 mb-2">Remove from Library?</h4>
+            <p className="text-sm text-gray-600 mb-4">
+              This will delete your reading progress for "{story.title}".
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  onRemoveFromLibrary(story._id, story.title);
+                  setShowRemoveConfirm(false);
+                }}
+                className="btn-primary text-sm bg-red-600 hover:bg-red-700"
+              >
+                Remove
+              </button>
+              <button
+                onClick={() => setShowRemoveConfirm(false)}
+                className="btn-secondary text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

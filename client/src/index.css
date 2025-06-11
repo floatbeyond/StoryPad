@@ -58,7 +58,7 @@
   }
 
   .navbar {
-    @apply bg-white shadow-sm border-b border-gray-200 py-3;
+    @apply bg-white shadow-sm border-b border-gray-200 py-3 z-50;
   }
 
   .container-custom {

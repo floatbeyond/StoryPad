@@ -58,7 +58,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar sticky top-0 z-10 bg-white border-b shadow-sm">
+    <nav className="navbar sticky top-0 z-50 bg-white border-b shadow-sm">
       <div className="container-custom">
         <div className="flex justify-between items-center py-3">
           {/* Logo */}
@@ -72,7 +72,7 @@ const Navbar = () => {
           <div className="hidden md:flex space-x-8">
             <Link to="/browse" className="text-storypad-text hover:text-storypad-primary transition-colors">Browse</Link>
             <Link to="/categories" className="text-storypad-text hover:text-storypad-primary transition-colors">Categories</Link>
-            <Link to="/library" className="text-storypad-text hover:text-storypad-primary transition-colors flex items-center gap-1">My Library</Link>
+            <Link to="/libraryv" className="text-storypad-text hover:text-storypad-primary transition-colors flex items-center gap-1">My Library</Link>
             <Link to="/mystories" className="text-storypad-text hover:text-storypad-primary transition-colors">My Stories</Link>
           </div>
 

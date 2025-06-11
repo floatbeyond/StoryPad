@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 
+// Make sure your API_BASE_URL is correct:
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const AdminPage = () => {
@@ -180,54 +181,119 @@ const AdminPage = () => {
     }
   };
 
-  const handleImportDataset = async (source, limit) => {
+  const importAIStories = async () => {
+    // Prevent multiple calls
+    if (importLoading) {
+      console.log('Import already in progress, skipping...');
+      return;
+    }
+
     setImportLoading(true);
     setError(null);
     setSuccess(null);
-
+    
     try {
+      console.log('🚀 Starting AI stories import...');
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/import/dataset`, {
+      
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
+
+      const response = await fetch(`${API_BASE_URL}/api/import/ai-stories`, {
         method: 'POST',
-        headers: {
+        headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ source, limit })
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const result = await response.json();
       
       if (result.success) {
-        setSuccess(`✅ Successfully imported ${result.storiesCreated} stories from ${source}!`);
+        setSuccess(`✅ Successfully imported ${result.stories.length} classic books!`);
         fetchStats();
         fetchStories();
       } else {
-        setError(`❌ Import failed: ${result.message}`);
+        setError(result.message || 'Import failed');
       }
     } catch (err) {
-      setError(`❌ Error: ${err.message}`);
+      if (err.name === 'AbortError') {
+        setError('Import timed out after 5 minutes');
+      } else {
+        setError(`Error: ${err.message}`);
+      }
     } finally {
       setImportLoading(false);
     }
   };
 
-  const importSampleStories = async () => {
+  const importDatasetStories = async () => {
+    if (importLoading) return;
+    
     setImportLoading(true);
     setError(null);
     setSuccess(null);
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/import/samples`, {
+      console.log('🚀 Starting dataset import to:', `${API_BASE_URL}/api/import/dataset-stories`);
+      
+      const response = await fetch(`${API_BASE_URL}/api/import/dataset-stories`, {
         method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setSuccess(`✅ Successfully imported ${result.totalStories} dataset stories across ${result.categoriesWithStories.length} categories!`);
+        fetchStats();
+        fetchStories();
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      console.error('❌ Dataset import error:', err);
+      setError(`Error: ${err.message}`);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const cleanupDatasetStories = async () => {
+    setImportLoading(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/import/cleanup-dataset`, {
+        method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
       const result = await response.json();
       
       if (result.success) {
-        setSuccess(`✅ Successfully imported ${result.stories.length} sample stories! Assigned to random users: ${result.userPool.map(u => u.username).join(', ')}`);
+        setSuccess(`✅ Cleaned up ${result.deletedCount} dataset stories`);
         fetchStats();
         fetchStories();
       } else {
@@ -239,35 +305,6 @@ const AdminPage = () => {
       setImportLoading(false);
     }
   };
-
-  const importGutenbergBooks = async () => {
-    setImportLoading(true);
-    setError(null);
-    setSuccess(null);
-    
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/import/gutenberg`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        setSuccess(`✅ Successfully imported ${result.imported.length} classic books! Distributed among users: ${result.userPool.map(u => u.username).join(', ')}`);
-        fetchStats();
-        fetchStories();
-      } else {
-        setError(result.message);
-      }
-    } catch (err) {
-      setError(`Error: ${err.message}`);
-    } finally {
-      setImportLoading(false);
-    }
-  };
-
 
   const deleteStory = async (storyId) => {
     if (!confirm('Are you sure you want to delete this story?')) return;
@@ -405,52 +442,55 @@ const AdminPage = () => {
                 <h2 className="text-xl font-semibold text-gray-900">Import Datasets</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Sample Stories */}
+                  {/* AI Generated Books */}
                   <div className="border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Sample Stories</h3>
-                    <p className="text-gray-600 mb-4">Add original sample stories for testing and demonstration.</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Gutenberg Import</h3>
+                    <p className="text-gray-600 mb-4">Import 40+ classic books from Project Gutenberg across all your existing categories.</p>
                     <button
-                      onClick={importSampleStories}
-                      disabled={importLoading}
-                      className="w-full btn-primary disabled:opacity-50"
+                      onClick={importAIStories}
+                      disabled={importLoading}  // This is crucial!
+                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition-colors"
                     >
-                      {importLoading ? 'Importing...' : 'Import 5 Sample Stories'}
+                      {importLoading ? 'Importing...' : 'Import Classic Literature'}
                     </button>
                   </div>
 
-                  {/* Project Gutenberg Classic Books */}
+                  {/* Dataset Stories */}
                   <div className="border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Classic Books</h3>
-                    <p className="text-gray-600 mb-4">Import classic literature from Project Gutenberg's free collection.</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">AI Pre-made Stories</h3>
+                    <p className="text-gray-600 mb-4">Import pre-made stories fitting already existing categories.</p>
                     <button
-                      onClick={importGutenbergBooks}
+                      onClick={importDatasetStories}
                       disabled={importLoading}
-                      className="w-full btn-primary disabled:opacity-50"
+                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition-colors"
                     >
-                      {importLoading ? 'Importing...' : 'Import 10 Classic Books'}
+                      {importLoading ? 'Importing...' : 'Import Dataset Stories'}
                     </button>
                   </div>
 
-                  {/* Import via Dataset */}
-                  <div className="border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Bulk Import</h3>
-                    <p className="text-gray-600 mb-4">Import larger datasets with various options.</p>
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => handleImportDataset('sample', 5)}
-                        disabled={importLoading}
-                        className="w-full btn-secondary text-sm disabled:opacity-50"
-                      >
-                        Import via Dataset API
-                      </button>
-                    </div>
+                  {/* Cleanup Dataset */}
+                  <div className="border border-red-200 rounded-lg p-6">
+                    <h3 className="text-lg font-medium text-red-900 mb-2">Cleanup Dataset</h3>
+                    <p className="text-red-600 mb-4">Remove all dataset stories to re-import with better chapter titles.</p>
+                    <button
+                      onClick={cleanupDatasetStories}
+                      disabled={importLoading}
+                      className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition-colors"
+                    >
+                      {importLoading ? 'Cleaning...' : 'Cleanup Dataset Stories'}
+                    </button>
                   </div>
                 </div>
 
                 {importLoading && (
-                  <div className="text-center py-4">
-                    <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-                    <p className="text-gray-600">Importing stories... This may take a few minutes.</p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <div className="flex items-center justify-center space-x-3">
+                      <div className="animate-spin h-6 w-6 border-3 border-blue-500 border-t-transparent rounded-full"></div>
+                      <div className="text-center">
+                        <p className="text-blue-800 font-medium">Processing...</p>
+                        <p className="text-blue-600 text-sm">This may take a few minutes depending on the dataset size.</p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
