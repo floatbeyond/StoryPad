@@ -17,13 +17,15 @@ const InvitationsPage = () => {
   const fetchInvitations = async () => {
     try {
       const token = localStorage.getItem('token');
+      
       if (!token) {
-        navigate('/login');
+        setError('Please log in to view invitations');
+        setLoading(false);
         return;
       }
 
-      console.log('📨 Fetching invitations...');
-      const response = await fetch(`${API_BASE_URL}/api/invitations`, {
+      // Use /api/user/invitations instead of /api/users/
+      const response = await fetch(`${API_BASE_URL}/api/user/invitations`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -31,14 +33,13 @@ const InvitationsPage = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Invitations fetched:', data.invitations);
         setInvitations(data.invitations);
       } else {
-        throw new Error('Failed to fetch invitations');
+        setError('Failed to load invitations');
       }
     } catch (err) {
-      console.error('❌ Error fetching invitations:', err);
-      setError(err.message);
+      console.error('Error fetching invitations:', err);
+      setError('Failed to load invitations');
     } finally {
       setLoading(false);
     }

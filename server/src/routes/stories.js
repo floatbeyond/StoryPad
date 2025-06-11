@@ -1,5 +1,6 @@
 import express from 'express';
 import { Story } from '../models/Story.js';
+import { User } from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { upload, cloudinary } from '../config/upload.js';
 
@@ -370,6 +371,131 @@ router.put('/:id/complete', authenticateToken, async (req, res) => {
   }
 });
 
+// Get collaborators for a story
+router.get('/:id/collaborators', authenticateToken, async (req, res) => {
+  try {
+    const story = await Story.findById(req.params.id)
+      .populate('collaborators.user', 'username firstName lastName email')
+      .populate('pendingInvitations.invitedUser', 'username firstName lastName email')
+      .populate('pendingInvitations.invitedBy', 'username firstName lastName');
+
+    if (!story) {
+      return res.status(404).json({
+        success: false,
+        message: 'Story not found'
+      });
+    }
+
+    // Check if user has access (owner or collaborator)
+    const isOwner = story.author.toString() === req.user.id;
+    const isCollaborator = story.collaborators.some(
+      collab => collab.user._id.toString() === req.user.id
+    );
+
+    if (!isOwner && !isCollaborator) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+
+    res.json({
+      success: true,
+      collaborators: story.collaborators || [],
+      pendingInvitations: story.pendingInvitations || []
+    });
+
+  } catch (error) {
+    console.error('Error fetching collaborators:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch collaborators',
+      error: error.message
+    });
+  }
+});
+
+// Invite collaborator
+router.post('/:id/invite', authenticateToken, async (req, res) => {
+  try {
+    const { userEmail, role } = req.body;
+    const storyId = req.params.id;
+
+    const story = await Story.findById(storyId);
+    if (!story) {
+      return res.status(404).json({
+        success: false,
+        message: 'Story not found'
+      });
+    }
+
+    // Check if user is the owner
+    if (story.author.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the story owner can send invitations'
+      });
+    }
+
+    // Find the user to invite
+    const userToInvite = await User.findOne({ email: userEmail });
+    if (!userToInvite) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check if already a collaborator
+    const isAlreadyCollaborator = story.collaborators.some(
+      collab => collab.user.toString() === userToInvite._id.toString()
+    );
+
+    if (isAlreadyCollaborator) {
+      return res.status(400).json({
+        success: false,
+        message: 'User is already a collaborator'
+      });
+    }
+
+    // Check if invitation already exists and is pending
+    const hasPendingInvitation = story.pendingInvitations.some(
+      inv => inv.invitedUser.toString() === userToInvite._id.toString() && inv.status === 'pending'
+    );
+
+    if (hasPendingInvitation) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invitation already sent to this user'
+      });
+    }
+
+    // Add invitation
+    story.pendingInvitations.push({
+      invitedUser: userToInvite._id,
+      invitedBy: req.user.id,
+      role: role,
+      status: 'pending',
+      invitedAt: new Date()
+    });
+
+    await story.save();
+
+    res.json({
+      success: true,
+      message: 'Invitation sent successfully'
+    });
+
+  } catch (error) {
+    console.error('Error sending invitation:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send invitation',
+      error: error.message
+    });
+  }
+});
+
 // Publish chapters
 router.put('/:id/publish', authenticateToken, async (req, res) => {
   try {
@@ -420,6 +546,200 @@ router.put('/:id/publish', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to publish chapters',
+      error: error.message
+    });
+  }
+});
+
+// Remove collaborator
+router.delete('/:id/collaborators/:collaboratorId', authenticateToken, async (req, res) => {
+  try {
+    const { id: storyId, collaboratorId } = req.params;
+    const userId = req.user.id;
+
+    console.log('🗑️ Removing collaborator:', collaboratorId, 'from story:', storyId);
+
+    const story = await Story.findById(storyId);
+    if (!story) {
+      return res.status(404).json({
+        success: false,
+        message: 'Story not found'
+      });
+    }
+
+    // Check if user is the owner
+    if (story.author.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the story owner can remove collaborators'
+      });
+    }
+
+    // Find and remove the collaborator
+    const collaboratorIndex = story.collaborators.findIndex(
+      collab => collab._id.toString() === collaboratorId
+    );
+
+    if (collaboratorIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Collaborator not found'
+      });
+    }
+
+    story.collaborators.splice(collaboratorIndex, 1);
+    await story.save();
+
+    console.log('✅ Collaborator removed successfully');
+
+    res.json({
+      success: true,
+      message: 'Collaborator removed successfully'
+    });
+
+  } catch (error) {
+    console.error('Error removing collaborator:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to remove collaborator',
+      error: error.message
+    });
+  }
+});
+
+// Cancel invitation
+router.delete('/:id/invitations/:invitationId', authenticateToken, async (req, res) => {
+  try {
+    const { id: storyId, invitationId } = req.params;
+    const userId = req.user.id;
+
+    console.log('❌ Cancelling invitation:', invitationId, 'for story:', storyId);
+
+    const story = await Story.findById(storyId);
+    if (!story) {
+      return res.status(404).json({
+        success: false,
+        message: 'Story not found'
+      });
+    }
+
+    // Check if user is the owner
+    if (story.author.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the story owner can cancel invitations'
+      });
+    }
+
+    // Find and remove the invitation
+    const invitationIndex = story.pendingInvitations.findIndex(
+      inv => inv._id.toString() === invitationId
+    );
+
+    if (invitationIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Invitation not found'
+      });
+    }
+
+    story.pendingInvitations.splice(invitationIndex, 1);
+    await story.save();
+
+    console.log('✅ Invitation cancelled successfully');
+
+    res.json({
+      success: true,
+      message: 'Invitation cancelled successfully'
+    });
+
+  } catch (error) {
+    console.error('Error cancelling invitation:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to cancel invitation',
+      error: error.message
+    });
+  }
+});
+
+// Respond to invitation 
+router.put('/:storyId/invitations/:invitationId', authenticateToken, async (req, res) => {
+  try {
+    const { storyId, invitationId } = req.params;
+    const { response } = req.body; // 'accepted' or 'declined'
+    const userId = req.user.id;
+
+    console.log(`📝 Processing invitation response: ${response} for invitation ${invitationId}`);
+
+    if (!['accepted', 'declined'].includes(response)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid response. Must be "accepted" or "declined"'
+      });
+    }
+
+    // Find the story with this invitation
+    const story = await Story.findById(storyId);
+    if (!story) {
+      return res.status(404).json({
+        success: false,
+        message: 'Story not found'
+      });
+    }
+
+    // Find the specific invitation
+    const invitationIndex = story.pendingInvitations.findIndex(
+      inv => inv._id.toString() === invitationId && 
+             inv.invitedUser.toString() === userId
+    );
+
+    if (invitationIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Invitation not found'
+      });
+    }
+
+    const invitation = story.pendingInvitations[invitationIndex];
+
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invitation is no longer valid'
+      });
+    }
+
+    if (response === 'accepted') {
+      // Add user as collaborator
+      story.collaborators.push({
+        user: userId,
+        role: invitation.role,
+        joinedAt: new Date()
+      });
+      
+      console.log('✅ User added as collaborator');
+    }
+
+    // Update invitation status
+    invitation.status = response;
+    invitation.respondedAt = new Date();
+
+    await story.save();
+
+    console.log(`✅ Invitation ${response} successfully`);
+
+    res.json({
+      success: true,
+      message: `Invitation ${response} successfully`,
+      response
+    });
+
+  } catch (error) {
+    console.error('Error responding to invitation:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to respond to invitation',
       error: error.message
     });
   }
