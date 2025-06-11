@@ -38,16 +38,47 @@ router.post('/login', async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid email or password' });
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email or password',
+      });
     }
-    if (user.password !== password) {
-      return res.status(400).json({ message: 'Invalid email or password' });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email or password',
+      });
     }
-    // Create JWT token
-    const token = jwt.sign({ id: user._id, email: user.email, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
-    res.json({ username: user.username, token });
+
+    // Generate token
+    const token = jwt.sign(
+      { id: user._id },
+      SECRET_KEY,
+      { expiresIn: '3d' }
+    ); 
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      username: user.username,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role || 'user' 
+      }
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
   }
 });
 
