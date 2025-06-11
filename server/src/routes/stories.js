@@ -328,6 +328,48 @@ router.put('/:id/cover', authenticateToken, upload.single('cover'), async (req, 
   }
 });
 
+// Complete story endpoint
+router.put('/:id/complete', authenticateToken, async (req, res) => {
+  try {
+    const story = await Story.findById(req.params.id);
+    
+    if (!story) {
+      return res.status(404).json({
+        success: false,
+        message: 'Story not found'
+      });
+    }
+
+    if (story.author.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to complete this story'
+      });
+    }
+
+    story.completed = true;
+    story.completedAt = new Date();
+    await story.save();
+
+    const updatedStory = await Story.findById(req.params.id)
+      .populate('author', 'username firstName lastName');
+
+    res.json({
+      success: true,
+      message: 'Story marked as complete',
+      story: updatedStory
+    });
+
+  } catch (error) {
+    console.error('❌ Error completing story:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to complete story',
+      error: error.message
+    });
+  }
+});
+
 // Publish chapters
 router.put('/:id/publish', authenticateToken, async (req, res) => {
   try {
