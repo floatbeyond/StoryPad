@@ -95,18 +95,36 @@ const AdminPage = () => {
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
     const token = localStorage.getItem('token');
     
-    if (!token || !currentUser.username) {
+    if (!token) {
       setLoading(false);
       return;
     }
 
-    // Simple admin check - TODO: Make this more sophisticated
-    // For now, we assume admin has username 'admin' or email '
-    if (currentUser.username !== 'admin' && currentUser.email !== 'admin@storypad.com') {
+    if (!currentUser || (!currentUser.username && !currentUser._id)) {
+      console.log('❌ No user data found');
       setLoading(false);
       return;
     }
 
+    // Check if user is admin
+    const isAdmin = currentUser.role === 'admin' || 
+                   currentUser.username === 'admin' || 
+                   currentUser.email === 'admin@storypad.com';
+    
+    console.log('🔐 Admin check result:', { 
+      role: currentUser.role, 
+      username: currentUser.username, 
+      email: currentUser.email,
+      isAdmin 
+    });
+
+    if (!isAdmin) {
+      console.log('❌ User is not admin');
+      setLoading(false);
+      return;
+    }
+
+    console.log('✅ Admin access granted');
     setUser(currentUser);
     setLoading(false);
   };
