@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import defaultAvatar from "../assets/profileimage.png";
+import BackButton from '../components/BackButton';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -74,6 +75,7 @@ const ProfilePage = () => {
             />
           </div>
           <div className="text-center md:text-left flex-1">
+          <BackButton />
             <h1 className="text-3xl font-bold text-gray-800">
               {userData.fullName}
             </h1>

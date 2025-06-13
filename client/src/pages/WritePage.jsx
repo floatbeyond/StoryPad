@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import CollaborationPanel from '../components/CollaborationPanel';
 import CollaborativeEditor from '../components/CollaborativeEditor';
 import PublishModal from '../components/PublishModal';
+import BackButton from '../components/BackButton';
 
 const DEFAULT_COVER = '/api/default-cover';
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -411,6 +412,7 @@ const WritePage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Story Header */}
+      <BackButton />
       {story && (
         <div className="bg-white border-b px-6 py-4 shadow-sm">
           <div className="max-w-7xl mx-auto">

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import FiltersPanel from '../components/FiltersPanel';
+import BackButton from '../components/BackButton';
+
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const DEFAULT_COVER = `${API_BASE_URL}/api/stories/default-cover`;
@@ -131,12 +133,15 @@ const BrowsePage = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="container-custom py-8">
         {/* Header */}
+        <BackButton />
         <div className="text-center mb-8">
+        
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Discover Stories</h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Explore amazing stories written by our community of writers
           </p>
         </div>
+      
 
         {/* Search Bar */}
         <div className="max-w-2xl mx-auto mb-8">

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import BackButton from '../components/BackButton';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -103,7 +104,10 @@ const MyStoriesPage = () => {
 
   return (
     <div className="container-custom py-8">
+
       <div className="flex items-center justify-between mb-6">
+
+      <BackButton />
         <h1 className="text-3xl font-bold">My Stories</h1>
         <Link to="/newwrite" className="btn-primary">
           ✍️ New Story

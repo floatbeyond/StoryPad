@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import BackButton from '../components/BackButton';
 
 const CommunityPage = () => {
   const mockPosts = [
@@ -9,6 +10,7 @@ const CommunityPage = () => {
 
   return (
     <div className="container-custom py-12">
+    <BackButton />
       <h1 className="text-3xl font-bold text-storypad-dark mb-6">Community Discussions</h1>
       <div className="space-y-4">
         {mockPosts.map((post) => (
