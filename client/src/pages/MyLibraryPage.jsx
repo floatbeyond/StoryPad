@@ -8,8 +8,30 @@ const MyLibraryPage = () => {
   const [readingProgress, setReadingProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [removing, setRemoving] = useState(null); // Track which story is being removed
+  const [removing, setRemoving] = useState(null);
   const navigate = useNavigate();
+
+  const handleClearAllProgress = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/reading-progress/clear-all`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setReadingProgress([]);
+      } else {
+        throw new Error(result.message || 'Failed to clear library');
+      }
+    } catch (err) {
+      console.error('Error clearing library:', err);
+      alert('Failed to clear library. Please try again.');
+    }
+  };
 
   useEffect(() => {
     const fetchReadingProgress = async () => {
@@ -174,29 +196,6 @@ const MyLibraryPage = () => {
       )}
     </div>
   );
-
-  // Helper function to clear all progress
-  async function handleClearAllProgress() {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/reading-progress/clear-all`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const result = await response.json();
-      if (response.ok && result.success) {
-        setReadingProgress([]);
-      } else {
-        throw new Error(result.message || 'Failed to clear library');
-      }
-    } catch (err) {
-      console.error('Error clearing library:', err);
-      alert('Failed to clear library. Please try again.');
-    }
-  }
 };
 
 const ReadingProgressCard = ({ 

@@ -99,13 +99,29 @@ router.delete('/:storyId', authenticateToken, async (req, res) => {
   }
 });
 
-// Add this route temporarily to clear all reading progress
+// Add this route to your reading-progress.js routes file:
 router.delete('/clear-all', authenticateToken, async (req, res) => {
   try {
-    await ReadingProgress.deleteMany({});
-    res.json({ success: true, message: 'All reading progress cleared' });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to clear reading progress' });
+    const userId = req.user.userId;
+    
+    console.log(`🗑️ Clearing all reading progress for user ${userId}`);
+    
+    const result = await ReadingProgress.deleteMany({ userId });
+    
+    console.log(`✅ Deleted ${result.deletedCount} reading progress records`);
+    
+    res.json({
+      success: true,
+      message: 'All reading progress cleared successfully',
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error('Error clearing all reading progress:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to clear reading progress',
+      error: error.message
+    });
   }
 });
 
