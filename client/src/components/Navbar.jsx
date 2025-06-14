@@ -71,7 +71,6 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-8">
             <Link to="/browse" className="text-storypad-text hover:text-storypad-primary transition-colors">Browse</Link>
-            <Link to="/categories" className="text-storypad-text hover:text-storypad-primary transition-colors">Categories</Link>
             <Link to="/library" className="text-storypad-text hover:text-storypad-primary transition-colors flex items-center gap-1">My Library</Link>
             <Link to="/mystories" className="text-storypad-text hover:text-storypad-primary transition-colors">My Stories</Link>
           </div>
