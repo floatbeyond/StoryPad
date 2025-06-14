@@ -99,14 +99,13 @@ router.delete('/:storyId', authenticateToken, async (req, res) => {
   }
 });
 
-// Add this route to your reading-progress.js routes file:
 router.delete('/clear-all', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id; // Change from userId to id
     
     console.log(`🗑️ Clearing all reading progress for user ${userId}`);
     
-    const result = await ReadingProgress.deleteMany({ userId });
+    const result = await ReadingProgress.deleteMany({ user: userId }); // Change from userId to user
     
     console.log(`✅ Deleted ${result.deletedCount} reading progress records`);
     
