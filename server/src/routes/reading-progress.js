@@ -78,27 +78,6 @@ router.get('/:storyId', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete reading progress for a specific story (remove from library)
-router.delete('/:storyId', authenticateToken, async (req, res) => {
-  try {
-    const { storyId } = req.params;
-    
-    const deletedProgress = await ReadingProgress.findOneAndDelete({
-      user: req.user.id,
-      story: storyId
-    });
-
-    if (!deletedProgress) {
-      return res.status(404).json({ success: false, message: 'Reading progress not found' });
-    }
-
-    res.json({ success: true, message: 'Story removed from library' });
-  } catch (err) {
-    console.error('Error deleting reading progress:', err);
-    res.status(500).json({ success: false, message: 'Failed to remove story from library', error: err.message });
-  }
-});
-
 router.delete('/clear-all', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id; // Change from userId to id
@@ -121,6 +100,27 @@ router.delete('/clear-all', authenticateToken, async (req, res) => {
       message: 'Failed to clear reading progress',
       error: error.message
     });
+  }
+});
+
+// Delete reading progress for a specific story (remove from library)
+router.delete('/:storyId', authenticateToken, async (req, res) => {
+  try {
+    const { storyId } = req.params;
+    
+    const deletedProgress = await ReadingProgress.findOneAndDelete({
+      user: req.user.id,
+      story: storyId
+    });
+
+    if (!deletedProgress) {
+      return res.status(404).json({ success: false, message: 'Reading progress not found' });
+    }
+
+    res.json({ success: true, message: 'Story removed from library' });
+  } catch (err) {
+    console.error('Error deleting reading progress:', err);
+    res.status(500).json({ success: false, message: 'Failed to remove story from library', error: err.message });
   }
 });
 
