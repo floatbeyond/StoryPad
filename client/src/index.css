@@ -34,31 +34,60 @@
     @apply bg-storypad-background text-storypad-text;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  
+  /* Dark mode body */
+  .dark body {
+    @apply bg-storypad-dark-bg text-storypad-dark-text;
+  }
 }
 
 @layer components {
   .btn-primary {
     @apply bg-storypad-primary text-white hover:bg-opacity-90 px-4 py-2 rounded-md transition-all;
   }
+  
+  .dark .btn-primary {
+    @apply bg-storypad-dark-primary;
+  }
 
   .btn-secondary {
     @apply bg-storypad-secondary text-white hover:bg-opacity-90 px-4 py-2 rounded-md transition-all;
+  }
+  
+  .dark .btn-secondary {
+    @apply bg-storypad-dark-secondary;
   }
 
   .btn-accent {
     @apply bg-storypad-accent text-white hover:bg-opacity-90 px-4 py-2 rounded-md transition-all;
   }
+  
+  .dark .btn-accent {
+    @apply bg-storypad-dark-accent;
+  }
 
   .card {
     @apply bg-white rounded-lg shadow-md p-4 border border-gray-100;
+  }
+  
+  .dark .card {
+    @apply bg-storypad-dark-surface border-gray-700;
   }
 
   .input {
     @apply px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-storypad-primary;
   }
+  
+  .dark .input {
+    @apply bg-storypad-dark-surface border-gray-600 text-storypad-dark-text focus:ring-storypad-dark-primary;
+  }
 
   .navbar {
     @apply bg-white shadow-sm border-b border-gray-200 py-3 z-50;
+  }
+  
+  .dark .navbar {
+    @apply bg-storypad-dark-surface border-gray-700;
   }
 
   .container-custom {
@@ -123,12 +152,36 @@
     inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
-/* הסתרת פס גלילה אופקי – Netflix style */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+/* Custom scrollbar for mobile */
+.scrollbar-custom {
+  scrollbar-width: thin;
+  scrollbar-color: #3b82f6 #e5e7eb;
 }
 
+.scrollbar-custom::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background: #3b82f6;
+  border-radius: 4px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background: #2563eb;
+}
+
+/* Hide scrollbar for desktop */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

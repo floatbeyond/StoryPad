@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { DarkModeProvider } from './contexts/DarkModeContext';
 import MainLayout from './layouts/MainLayout';
 import HomePage from './pages/HomePage';
 import StoryPage from './pages/StoryPage';
@@ -13,32 +14,50 @@ import InvitationsPage from './pages/InvitationsPage';
 import AdminPage from './pages/AdminPage';
 import NotFound from './pages/NotFound';
 import MyLibraryPage from './pages/MyLibraryPage';
+import NoPermissionPage from './pages/NoPermissionPage';
+import Navbar from './components/Navbar';
 
 function App() {
   return (
-    <Routes>
-      {/* Auth Pages (no MainLayout) */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
+    <DarkModeProvider>
+      <Router>
+        <div className="min-h-screen bg-storypad-background dark:bg-storypad-dark-bg transition-colors">
+          <Routes>
+            {/* Auth Pages (with standalone navbar) */}
+            <Route path="/login" element={
+              <>
+                <Navbar />
+                <LoginPage />
+              </>
+            } />
+            <Route path="/signup" element={
+              <>
+                <Navbar />
+                <SignupPage />
+              </>
+            } />
 
-      {/* Main Layout Pages */}
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/story/:id" element={<StoryPage />} />
-        <Route path="/browse" element={<BrowsePage />} />
-        <Route path="/invitations" element={<InvitationsPage />} />
-        <Route path="/newwrite" element={<NewWritePage />} />
-        <Route path="/mystories" element={<MyStoriesPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/write" element={<WritePage />} />
-        <Route path="/write/:storyId" element={<WritePage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/library" element={<MyLibraryPage />} />
-
-        {/* Catch-all for 404 Not Found */}
-        <Route path="*" element={<NotFound />} />
-      </Route>
-    </Routes>
+            {/* Main Layout Pages (MainLayout includes navbar) */}
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/browse" element={<BrowsePage />} />
+              <Route path="/invitations" element={<InvitationsPage />} />
+              <Route path="/write" element={<NewWritePage />} />
+              <Route path="/mystories" element={<MyStoriesPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/write/:id" element={<WritePage />} />
+              <Route path="/story/:id/edit" element={<WritePage />} />
+              <Route path="/story/:id" element={<StoryPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/library" element={<MyLibraryPage />} />
+              <Route path="/no-permission" element={<NoPermissionPage />} />
+              {/* Catch-all for 404 Not Found */}
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </div>
+      </Router>
+    </DarkModeProvider>
   );
 }
 

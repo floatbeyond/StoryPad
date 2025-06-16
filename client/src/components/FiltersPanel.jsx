@@ -14,32 +14,32 @@ const FiltersPanel = ({ filters, setFilters, allCategories, maxChapters }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 sticky top-4">
+    <div className="bg-white dark:bg-storypad-dark-surface rounded-lg shadow-md dark:shadow-lg p-6 sticky top-20 border dark:border-gray-700">
       {/* Chapters Range */}
       <div className="mb-6">
-        <h3 className="text-gray-800 font-semibold mb-3">Number of Chapters</h3>
+        <h3 className="text-gray-800 dark:text-storypad-dark-text font-semibold mb-3">Number of Chapters</h3>
         <div className="flex items-center gap-2">
             <div>
-            <label className="block text-sm text-gray-600 mb-1">From</label>
+            <label className="block text-sm text-gray-600 dark:text-storypad-dark-text-light mb-1">From</label>
             <input
                 type="number"
                 min="0"
                 max={filters.chaptersRange.max}
                 value={filters.chaptersRange.min}
                 onChange={(e) => handleChapterRangeChange('min', e.target.value)}
-                className="w-24 px-2 py-1 border rounded text-sm"
+                className="w-24 px-2 py-1 border dark:border-gray-600 rounded text-sm bg-white dark:bg-storypad-dark-bg text-gray-900 dark:text-storypad-dark-text focus:ring-2 focus:ring-blue-500 dark:focus:ring-storypad-dark-primary"
             />
             </div>
-            <span className="text-gray-400 pt-6">-</span>
+            <span className="text-gray-400 dark:text-gray-500 pt-6">-</span>
             <div>
-            <label className="block text-sm text-gray-600 mb-1">To</label>
+            <label className="block text-sm text-gray-600 dark:text-storypad-dark-text-light mb-1">To</label>
             <input
                 type="number"
                 min={filters.chaptersRange.min}
                 max={maxChapters}
                 value={filters.chaptersRange.max}
                 onChange={(e) => handleChapterRangeChange('max', e.target.value)}
-                className="w-24 px-2 py-1 border rounded text-sm"
+                className="w-24 px-2 py-1 border dark:border-gray-600 rounded text-sm bg-white dark:bg-storypad-dark-bg text-gray-900 dark:text-storypad-dark-text focus:ring-2 focus:ring-blue-500 dark:focus:ring-storypad-dark-primary"
             />
           </div>
         </div>
@@ -47,7 +47,7 @@ const FiltersPanel = ({ filters, setFilters, allCategories, maxChapters }) => {
 
       {/* Categories */}
       <div className="mb-6">
-        <h3 className="text-gray-800 font-semibold mb-3">Categories</h3>
+        <h3 className="text-gray-800 dark:text-storypad-dark-text font-semibold mb-3">Categories</h3>
         <div className="space-y-2 max-h-48 overflow-y-auto">
           {allCategories.map(category => (
             <label key={category} className="flex items-center">
@@ -67,9 +67,9 @@ const FiltersPanel = ({ filters, setFilters, allCategories, maxChapters }) => {
                     }));
                   }
                 }}
-                className="rounded text-blue-600"
+                className="rounded text-blue-600 dark:text-storypad-dark-primary focus:ring-blue-500 dark:focus:ring-storypad-dark-primary"
               />
-              <span className="ml-2 text-sm text-gray-600">{category}</span>
+              <span className="ml-2 text-sm text-gray-600 dark:text-storypad-dark-text-light">{category}</span>
             </label>
           ))}
         </div>
@@ -77,11 +77,11 @@ const FiltersPanel = ({ filters, setFilters, allCategories, maxChapters }) => {
 
       {/* Time Filter */}
       <div className="mb-6">
-        <h3 className="text-gray-800 font-semibold mb-3">Last Published</h3>
+        <h3 className="text-gray-800 dark:text-storypad-dark-text font-semibold mb-3">Last Published</h3>
         <select
           value={filters.timeFilter}
           onChange={(e) => setFilters(prev => ({ ...prev, timeFilter: e.target.value }))}
-          className="w-full p-2 border rounded text-sm"
+          className="w-full p-2 border dark:border-gray-600 rounded text-sm bg-white dark:bg-storypad-dark-bg text-gray-900 dark:text-storypad-dark-text focus:ring-2 focus:ring-blue-500 dark:focus:ring-storypad-dark-primary"
         >
           <option value="all">All Time</option>
           <option value="week">Last Week</option>
@@ -94,11 +94,11 @@ const FiltersPanel = ({ filters, setFilters, allCategories, maxChapters }) => {
 
       {/* Status */}
       <div className="mb-6">
-        <h3 className="text-gray-800 font-semibold mb-3">Status</h3>
+        <h3 className="text-gray-800 dark:text-storypad-dark-text font-semibold mb-3">Status</h3>
         <select
           value={filters.completion}
           onChange={(e) => setFilters(prev => ({ ...prev, completion: e.target.value }))}
-          className="w-full p-2 border rounded text-sm"
+          className="w-full p-2 border dark:border-gray-600 rounded text-sm bg-white dark:bg-storypad-dark-bg text-gray-900 dark:text-storypad-dark-text focus:ring-2 focus:ring-blue-500 dark:focus:ring-storypad-dark-primary"
         >
           <option value="all">All Stories</option>
           <option value="completed">Completed Only</option>
@@ -114,7 +114,7 @@ const FiltersPanel = ({ filters, setFilters, allCategories, maxChapters }) => {
           timeFilter: 'all',
           completion: 'all'
         })}
-        className="w-full py-2 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
+        className="w-full py-2 text-sm text-blue-600 dark:text-storypad-dark-primary hover:bg-blue-50 dark:hover:bg-gray-700 rounded transition-colors"
       >
         Clear All Filters
       </button>

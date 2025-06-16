@@ -62,9 +62,9 @@ if (data.success) {
   const categories = Array.from(new Set(stories.flatMap(s => s.category)));
 
   return (
-    <div>
+    <div className="bg-storypad-background dark:bg-storypad-dark-bg transition-colors">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-storypad-primary to-storypad-dark text-white py-16">
+      <section className="bg-gradient-to-r from-storypad-primary to-storypad-dark dark:from-storypad-dark-primary dark:to-storypad-dark-bg text-white py-16">
         <div className="container-custom">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Discover Stories That Move You</h1>
           <p className="text-xl mb-6">
@@ -73,17 +73,17 @@ if (data.success) {
           <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
             <button
               onClick={handleStartWriting}
-              className="bg-storypad-accent hover:bg-opacity-90 text-white px-6 py-3 rounded-lg font-medium text-center"
+              className="bg-storypad-accent dark:bg-storypad-dark-accent hover:bg-opacity-90 text-white px-6 py-3 rounded-lg font-medium text-center"
             >
               Start Writing
             </button>
-            <Link to="/browse" className="bg-white text-storypad-primary px-6 py-3 rounded-lg font-medium text-center">
+            <Link to="/browse" className="bg-white dark:bg-storypad-dark-surface text-storypad-primary dark:text-storypad-dark-primary px-6 py-3 rounded-lg font-medium text-center">
               Start Reading
             </Link>
           </div>
           {showOptions && (
-            <div className="mt-6 bg-white rounded-lg shadow-lg p-6 flex flex-col space-y-4 text-storypad-dark">
-              <button className="btn-primary" onClick={() => navigate("/newWrite")}>
+            <div className="mt-6 bg-white dark:bg-storypad-dark-surface rounded-lg shadow-lg p-6 flex flex-col space-y-4 text-storypad-dark dark:text-storypad-dark-text">
+              <button className="btn-primary" onClick={() => navigate("/write")}>
                 Start a new story
               </button>
               <button className="btn-secondary" onClick={() => navigate("/mystories")}>
@@ -97,55 +97,54 @@ if (data.success) {
         </div>
       </section>
 
-      {/* ✅ Loading/Error handler once at top */}
-{loading ? (
-  <div className="text-center py-12 text-lg text-gray-500">Loading stories...</div>
-) : error ? (
-  <div className="text-center py-12 text-red-500">{error}</div>
-) : (
-  <>
-    {/* ✅ New Releases */}
-    <section className="pt-6 pb-4">
-      <div className="container-custom">
-        <HorizontalScrollSection title="New Releases" stories={featuredStories} />
-      </div>
-    </section>
+      {/* Loading/Error handler once at top */}
+      {loading ? (
+        <div className="text-center py-12 text-lg text-gray-500 dark:text-storypad-dark-text-light">Loading stories...</div>
+      ) : error ? (
+        <div className="text-center py-12 text-red-500">{error}</div>
+      ) : (
+        <>
+          {/* New Releases */}
+          <section className="pt-6 pb-4">
+            <div className="container-custom">
+              <HorizontalScrollSection title="New Releases" stories={featuredStories} />
+            </div>
+          </section>
 
-    {/* ✅ Popular Stories */}
-    <section className="py-4">
-      <div className="container-custom">
-        <HorizontalScrollSection title="Popular Stories" stories={popularStories} />
-      </div>
-    </section>
+          {/* Popular Stories */}
+          <section className="py-4">
+            <div className="container-custom">
+              <HorizontalScrollSection title="Popular Stories" stories={popularStories} />
+            </div>
+          </section>
 
-    {/* 🔮 Browse by Categories – Clean horizontal rows */}
-    {Array.from(new Set(stories.flatMap(s => s.category))).map((category) => {
-      const storiesInCategory = stories.filter(s => s.category?.includes(category));
-      if (storiesInCategory.length === 0) return null;
+          {/* Browse by Categories */}
+          {Array.from(new Set(stories.flatMap(s => s.category))).map((category) => {
+            const storiesInCategory = stories.filter(s => s.category?.includes(category));
+            if (storiesInCategory.length === 0) return null;
 
-      return (
-        <section key={category} className="py-4">
-          <div className="container-custom">
-            <HorizontalScrollSection
-              title={category}
-              stories={storiesInCategory}
-            />
-          </div>
-        </section>
-      );
-    })}
-  </>
-)}
+            return (
+              <section key={category} className="py-4">
+                <div className="container-custom">
+                  <HorizontalScrollSection
+                    title={category}
+                    stories={storiesInCategory}
+                  />
+                </div>
+              </section>
+            );
+          })}
+        </>
+      )}
 
-    
       {/* CTA */}
-      <section className="py-12 bg-storypad-dark text-white">
+      <section className="py-12 bg-storypad-dark dark:bg-storypad-dark-surface text-white">
         <div className="container-custom text-center">
           <h2 className="text-3xl font-bold mb-4">Start Your Writing Journey Today</h2>
           <p className="text-xl mb-6 max-w-2xl mx-auto">
             Join StoryPad to share your stories with the world, connect with readers, and be part of a vibrant community of writers.
           </p>
-          <Link to="/signup" className="bg-storypad-accent text-white px-6 py-3 rounded-lg font-medium inline-block">
+          <Link to="/signup" className="bg-storypad-accent dark:bg-storypad-dark-accent text-white px-6 py-3 rounded-lg font-medium inline-block">
             Create Your Account
           </Link>
         </div>

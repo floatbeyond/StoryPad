@@ -23,6 +23,15 @@ module.exports = {
           error: "#EF5350",       // Red for errors
           warning: "#FFCA28",     // Yellow for warnings
           background: "#F5F7FA",  // Light background
+          
+          // Dark mode variants
+          "dark-primary": "#5A7BA3",
+          "dark-secondary": "#9BB5C4",
+          "dark-accent": "#FFB74D",
+          "dark-bg": "#1a1a1a",
+          "dark-surface": "#2d2d2d",
+          "dark-text": "#e0e0e0",
+          "dark-text-light": "#a0a0a0",
         },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",

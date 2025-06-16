@@ -169,6 +169,63 @@ router.delete('/users/:userId', authenticateToken, requireAdmin, async (req, res
   }
 });
 
+// Delete story (Admin only)
+router.delete('/stories/:storyId', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { storyId } = req.params;
+    
+    console.log(`🗑️ Admin deleting story ${storyId} by user ${req.user.id}`);
+    
+    const story = await Story.findById(storyId);
+    
+    if (!story) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Story not found' 
+      });
+    }
+
+    // Admin can delete any story
+    await Story.findByIdAndDelete(storyId);
+
+    console.log(`✅ Story ${storyId} deleted successfully by admin`);
+
+    res.json({ 
+      success: true, 
+      message: 'Story deleted successfully' 
+    });
+
+  } catch (error) {
+    console.error('❌ Error deleting story:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error' 
+    });
+  }
+});
+
+// Get all stories for admin management
+router.get('/stories', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const stories = await Story.find({})
+      .populate('author', 'username firstName lastName email')
+      .sort('-createdAt');
+
+    res.json({
+      success: true,
+      stories
+    });
+
+  } catch (error) {
+    console.error('Error fetching stories for admin:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch stories',
+      error: error.message
+    });
+  }
+});
+
 // Get system stats
 router.get('/stats', authenticateToken, requireAdmin, async (req, res) => {
   try {

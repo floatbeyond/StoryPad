@@ -3,6 +3,8 @@ import { Story } from '../models/Story.js';
 import { User } from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { upload, cloudinary } from '../config/upload.js';
+import jwt from 'jsonwebtoken';
+import fs from 'fs';
 
 const router = express.Router();
 
@@ -140,49 +142,135 @@ router.get('/', async (req, res) => {
 });
 
 // Get single story (public access for published stories, auth for unpublished)
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     console.log(`📖 Fetching story ${req.params.id}`);
     
     const story = await Story.findById(req.params.id)
       .populate('author', 'username firstName lastName')
-      .populate('collaborators', 'username firstName lastName') // KEEP THIS!
+      .populate('collaborators', 'username firstName lastName')
       .populate('chapters');
 
     if (!story) {
       return res.status(404).json({ success: false, message: 'Story not found' });
     }
 
-    // Enhanced permission logic with collaborators
-    console.log('🔍 Story access check:');
-    console.log('Story ID:', story._id);
-    console.log('Story published:', story.published);
-    console.log('Story author ID:', story.author._id.toString());
-    console.log('Current user ID:', req.user.id);
-    console.log('Collaborators:', story.collaborators?.map(c => c._id.toString()));
+    // Check if authentication is provided (optional)
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    let user = null;
 
-    const isOwner = story.author._id.toString() === req.user.id;
-    const isCollaborator = story.collaborators?.some(
-      collab => collab._id.toString() === req.user.id
+    if (token) {
+      try {
+        user = jwt.verify(token, process.env.JWT_SECRET); // ✅ Use the imported jwt
+        console.log('✅ User authenticated:', user.username || user.id);
+      } catch (err) {
+        console.log('❌ Invalid token provided, treating as unauthenticated user');
+      }
+    } else {
+      console.log('📝 No token provided');
+    }
+
+    // Permission logic
+    const isOwner = user && story.author._id.toString() === user.id;
+    const isCollaborator = user && story.collaborators?.some(
+      collab => collab._id.toString() === user.id
     );
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = user && user.role === 'admin';
     const isPublished = story.published;
+    const isAuthenticated = !!user; // This is the key fix!
 
-    // Allow access if:
-    // 1. Story is published, OR
-    // 2. User is the author, OR  
-    // 3. User is a collaborator, OR
-    // 4. User is an admin
+    console.log('🔍 Story access check:', {
+      storyId: story._id,
+      published: isPublished,
+      authenticated: isAuthenticated, // Should show true when logged in
+      isOwner,
+      isCollaborator,
+      isAdmin
+    });
+
+    // Access rules for unpublished stories
     if (!isPublished && !isOwner && !isCollaborator && !isAdmin) {
-      console.log('❌ Access denied - not published and not owner/collaborator/admin');
       return res.status(403).json({ 
         success: false, 
         message: 'You do not have permission to access this story' 
       });
     }
 
-    console.log('✅ Access granted:', { isOwner, isCollaborator, isAdmin, isPublished });
-    res.json({ success: true, story });
+    // For published stories, provide preview or full access
+    let responseStory = { ...story.toObject() };
+    let requiresAuth = false;
+
+    // FIXED: Only show preview if story is published AND user is NOT authenticated
+    if (isPublished && !isAuthenticated) {
+      // Provide preview for non-authenticated users ONLY
+      requiresAuth = true;
+      
+      if (responseStory.chapters && responseStory.chapters.length > 0) {
+        responseStory.chapters = responseStory.chapters.map((chapter, index) => {
+          if (index === 0) {
+            // First chapter: show preview (first 3 paragraphs or 500 characters)
+            const content = chapter.content || '';
+            const paragraphs = content.split('\n\n');
+            
+            let previewContent = '';
+            if (paragraphs.length >= 3) {
+              previewContent = paragraphs.slice(0, 3).join('\n\n');
+            } else {
+              previewContent = content.substring(0, 500);
+            }
+            
+            if (previewContent.length < content.length) {
+              previewContent += '\n\n[LOGIN_TO_CONTINUE]';
+            }
+            
+            return {
+              ...chapter,
+              content: previewContent,
+              isPreview: true,
+              hasMore: previewContent.length < content.length // Add this flag
+            };
+          } else {
+            // Other chapters: show title only
+            return {
+              _id: chapter._id,
+              title: chapter.title,
+              published: chapter.published,
+              isPreview: true,
+              content: '[Please log in to read this chapter]'
+            };
+          }
+        });
+      }
+
+      console.log('📖 Providing preview version for unauthenticated user');
+    } else {
+      // FIXED: For authenticated users OR unpublished stories (with proper access), show full content
+      console.log('✅ Providing full access - user is authenticated or has special access');
+      
+      // Ensure chapters don't have preview flags for authenticated users
+      if (responseStory.chapters) {
+        responseStory.chapters = responseStory.chapters.map(chapter => ({
+          ...chapter,
+          isPreview: false
+        }));
+      }
+    }
+
+    // Increment views (only for published stories and if not the author)
+    if (isPublished && (!user || !isOwner)) {
+      story.views = (story.views || 0) + 1;
+      await story.save();
+    }
+
+    res.json({ 
+      success: true, 
+      story: responseStory,
+      requiresAuth,
+      isPreview: requiresAuth,
+      isAuthenticated, // Add this for frontend debugging
+      message: requiresAuth ? 'Preview mode - login for full access' : null
+    });
   } catch (error) {
     console.error('Error fetching story:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -247,71 +335,74 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Update story cover
+// Update story cover (handles both file upload and URL)
 router.put('/:id/cover', authenticateToken, upload.single('cover'), async (req, res) => {
   try {
-    const { id } = req.params;
+    console.log(`📸 Updating cover for story ${req.params.id}`);
     
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'No image file provided'
-      });
-    }
-
-    const story = await Story.findById(id);
+    const story = await Story.findById(req.params.id);
     if (!story) {
-      return res.status(404).json({
-        success: false,
-        message: 'Story not found'
+      return res.status(404).json({ success: false, message: 'Story not found' });
+    }
+
+    // Check permissions
+    const isOwner = story.author.toString() === req.user.id;
+    const isCollaborator = story.collaborators?.some(
+      collab => collab.toString() === req.user.id
+    );
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isCollaborator && !isAdmin) {
+      return res.status(403).json({ success: false, message: 'Permission denied' });
+    }
+
+    let coverUrl;
+
+    // Check if this is a URL update (no file uploaded)
+    if (req.body.coverUrl && !req.file) {
+      coverUrl = req.body.coverUrl;
+      console.log('📎 Using provided cover URL:', coverUrl);
+    } 
+    // Handle file upload
+    else if (req.file) {
+      console.log('📁 Processing uploaded file:', req.file.originalname);
+      
+      // Upload to Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: `storypad/covers/user-uploads/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}`,
+        public_id: `${req.user.id}_${Date.now()}`,
+        transformation: [
+          { width: 400, height: 600, crop: 'fill', gravity: 'center' },
+          { quality: 'auto:good' },
+          { format: 'auto' }
+        ]
       });
+
+      coverUrl = result.secure_url;
+      console.log('☁️ Uploaded to Cloudinary:', coverUrl);
+
+      // Clean up temp file
+      fs.unlinkSync(req.file.path);
+    } else {
+      return res.status(400).json({ success: false, message: 'No cover URL or file provided' });
     }
 
-    if (story.author.toString() !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to update this story'
-      });
-    }
+    // Update story
+    story.cover = coverUrl;
+    await story.save();
 
-    // Delete old cover image from Cloudinary if it exists and isn't the default
-    if (story.cover && story.cover.includes('cloudinary.com') && !story.cover.includes('default-cover')) {
-      try {
-        const urlParts = story.cover.split('/');
-        const publicIdWithExtension = urlParts[urlParts.length - 1];
-        const publicId = `storypad-covers/${publicIdWithExtension.split('.')[0]}`;
-        await cloudinary.uploader.destroy(publicId);
-        console.log('🗑️ Deleted old cover image:', publicId);
-      } catch (deleteError) {
-        console.log('Could not delete old image:', deleteError.message);
-      }
-    }
+    console.log(`✅ Cover updated successfully for story ${story._id}`);
 
-    const coverUrl = req.file.path; // Cloudinary URL
-    console.log('📸 New cover URL from Cloudinary:', coverUrl);
-
-    // Update the story with the new cover
-    const updatedStory = await Story.findByIdAndUpdate(
-      id,
-      { cover: coverUrl },
-      { new: true }
-    ).populate('author', 'username firstName lastName');
-
-    console.log('✅ Story cover updated in database:', updatedStory.cover);
-
-    res.json({
-      success: true,
-      message: 'Cover image updated successfully',
-      coverUrl: updatedStory.cover
+    res.json({ 
+      success: true, 
+      message: 'Cover updated successfully',
+      cover: coverUrl,
+      coverUrl: coverUrl // Add this for compatibility
     });
 
   } catch (error) {
-    console.error('❌ Error updating cover image:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update cover image',
-      error: error.message
-    });
+    console.error('❌ Error updating cover:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
@@ -375,7 +466,7 @@ router.get('/:id/collaborators', authenticateToken, async (req, res) => {
     // Check if user has access (owner or collaborator)
     const isOwner = story.author.toString() === req.user.id;
     const isCollaborator = story.collaborators.some(
-      collab => collab.user._id.toString() === req.user.id
+      collab => collab.user.id.toString() === req.user.id
     );
 
     if (!isOwner && !isCollaborator) {
@@ -799,6 +890,224 @@ router.post('/:id/unlike', authenticateToken, async (req, res) => {
     res.json({ success: true, likes: story.likes.length });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to unlike story', error: err.message });
+  }
+});
+
+// Get story for editing (collaborators and owners only)
+router.get('/:id/edit', authenticateToken, async (req, res) => {
+  try {
+    console.log(`✏️ Fetching story ${req.params.id} for editing by user ${req.user.id}`);
+    
+    const story = await Story.findById(req.params.id)
+      .populate('author', 'username firstName lastName email')
+      .populate('collaborators.user', 'username firstName lastName email') // Populate nested user
+      .populate('chapters');
+
+    if (!story) {
+      return res.status(404).json({ success: false, message: 'Story not found' });
+    }
+
+    // Debug: Log the actual structure
+    console.log('🔍 Permission check debug:', {
+      storyId: story._id,
+      requestingUserId: req.user.id,
+      authorIdString: story.author._id.toString(),
+      collaborators: story.collaborators?.map(c => ({
+        collaboratorId: c._id.toString(),
+        userId: c.user._id.toString(),
+        username: c.user.username,
+        role: c.role
+      }))
+    });
+
+    // Check permissions for editing
+    const isOwner = story.author._id.toString() === req.user.id.toString();
+    const isCollaborator = story.collaborators?.some(
+      collab => collab.user._id.toString() === req.user.id.toString() 
+    );
+    const isAdmin = req.user.role === 'admin';
+
+    console.log('🔍 Permission results:', {
+      isOwner,
+      isCollaborator,
+      isAdmin,
+      hasAccess: isOwner || isCollaborator || isAdmin
+    });
+
+    // Only owners, collaborators, or admins can edit
+    if (!isOwner && !isCollaborator && !isAdmin) {
+      console.log('❌ Access denied for user:', req.user.id);
+      return res.status(403).json({ 
+        success: false, 
+        message: 'You do not have permission to edit this story' 
+      });
+    }
+
+    // Return full story data for editing
+    res.json({ 
+      success: true, 
+      story: story.toObject(),
+      permissions: {
+        isOwner,
+        isCollaborator,
+        isAdmin,
+        canEdit: true
+      }
+    });
+
+    console.log('✅ Story edit access granted for:', req.user.username || req.user.id);
+
+  } catch (error) {
+    console.error('❌ Error fetching story for editing:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// In your add collaborator route, ensure consistent ID format:
+router.put('/:id/collaborators', authenticateToken, async (req, res) => {
+  try {
+    const { collaboratorUsername } = req.body;
+    
+    // Find the collaborator user
+    const collaborator = await User.findOne({ username: collaboratorUsername });
+    if (!collaborator) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const story = await Story.findById(req.params.id);
+    if (!story) {
+      return res.status(404).json({ success: false, message: 'Story not found' });
+    }
+
+    // Check if user is already a collaborator
+    const isAlreadyCollaborator = story.collaborators?.some(
+      collab => collab.toString() === collaborator._id.toString() // ✅ Consistent comparison
+    );
+
+    if (isAlreadyCollaborator) {
+      return res.status(400).json({ success: false, message: 'User is already a collaborator' });
+    }
+
+    // Add collaborator (store as ObjectId)
+    story.collaborators = story.collaborators || [];
+    story.collaborators.push(collaborator._id); // ✅ Store ObjectId
+    
+    await story.save();
+
+    console.log(`✅ Added collaborator ${collaborator.username} (${collaborator._id}) to story ${story._id}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Collaborator added successfully',
+      collaborator: {
+        id: collaborator._id,
+        username: collaborator.username
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error adding collaborator:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Accept invitation route - using embedded schema
+router.post('/invitations/:invitationId/accept', authenticateToken, async (req, res) => {
+  try {
+    const invitationId = req.params.invitationId;
+    
+    // Find story with the pending invitation
+    const story = await Story.findOne({
+      'pendingInvitations._id': invitationId,
+      'pendingInvitations.invitedUser': req.user.id,
+      'pendingInvitations.status': 'pending'
+    }).populate('author', 'username firstName lastName email');
+
+    if (!story) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Invitation not found or already processed' 
+      });
+    }
+
+    // Find the specific invitation
+    const invitation = story.pendingInvitations.id(invitationId);
+    
+    if (!invitation) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Invitation not found' 
+      });
+    }
+
+    // Check if user is already a collaborator
+    const isAlreadyCollaborator = story.collaborators?.some(
+      collab => collab.user.toString() === req.user.id
+    );
+
+    if (!isAlreadyCollaborator) {
+      // Add user as collaborator
+      story.collaborators = story.collaborators || [];
+      story.collaborators.push({
+        user: req.user.id,
+        role: invitation.role,
+        joinedAt: new Date()
+      });
+    }
+
+    // Update invitation status
+    invitation.status = 'accepted';
+    invitation.respondedAt = new Date();
+
+    await story.save();
+
+    console.log(`✅ User ${req.user.id} accepted invitation for story ${story._id}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Invitation accepted successfully',
+      redirectUrl: `/story/${story._id}/edit` // ✅ New URL format
+    });
+
+  } catch (error) {
+    console.error('❌ Error accepting invitation:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Delete own story (Story owner only)
+router.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    const story = await Story.findById(req.params.id);
+    
+    if (!story) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Story not found' 
+      });
+    }
+
+    // Only story owner can delete (not admin via this route)
+    if (story.author.toString() !== req.user.id) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Permission denied. Only the story owner can delete this story.' 
+      });
+    }
+
+    await Story.findByIdAndDelete(req.params.id);
+
+    res.json({ 
+      success: true, 
+      message: 'Story deleted successfully' 
+    });
+
+  } catch (error) {
+    console.error('Error deleting story:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error' 
+    });
   }
 });
 

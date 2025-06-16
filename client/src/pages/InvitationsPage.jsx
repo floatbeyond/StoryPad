@@ -110,10 +110,10 @@ const InvitationsPage = () => {
   );
 
   return (
-    <div className="container-custom py-8">
+    <div className="container-custom py-8 bg-gray-50 dark:bg-storypad-dark-bg min-h-screen">
       <div className="flex items-center justify-between mb-6">
         <BackButton />
-        <h1 className="text-3xl font-bold">Collaboration Invitations</h1>
+        <h1 className="text-3xl font-bold dark:text-storypad-dark-text">Collaboration Invitations</h1>
         <button 
           onClick={fetchInvitations}
           className="btn-secondary text-sm"
@@ -123,14 +123,14 @@ const InvitationsPage = () => {
       </div>
       
       {invitations.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
+        <div className="bg-white dark:bg-storypad-dark-surface rounded-lg shadow p-8 text-center">
           <div className="mb-4">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2m13-4h-2m-5-4v2m0 0v2m0-2h2m-2 0H9" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No pending invitations</h3>
-          <p className="text-gray-600">You don't have any collaboration invitations at the moment.</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-storypad-dark-text mb-2">No pending invitations</h3>
+          <p className="text-gray-600 dark:text-storypad-dark-text-light">You don't have any collaboration invitations at the moment.</p>
           <button 
             onClick={() => navigate('/mystories')}
             className="btn-primary mt-4"
@@ -141,39 +141,39 @@ const InvitationsPage = () => {
       ) : (
         <div className="space-y-6">
           {invitations.map((invitation) => (
-            <div key={invitation._id} className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow">
+            <div key={invitation._id} className="bg-white dark:bg-storypad-dark-surface rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-storypad-dark-text mb-2">
                     {invitation.story.title}
                   </h3>
-                  <p className="text-gray-600 mb-3 line-clamp-2">
+                  <p className="text-gray-600 dark:text-storypad-dark-text-light mb-3 line-clamp-2">
                     {invitation.story.description}
                   </p>
                   
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                  <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-storypad-dark-text-light">
                     <div className="flex items-center">
                       <span className="font-medium">Invited by:</span>
-                      <span className="ml-1 text-blue-600">{invitation.invitedBy.username}</span>
+                      <span className="ml-1 text-blue-600 dark:text-blue-400">{invitation.invitedBy.username}</span>
                     </div>
                     <div className="flex items-center">
                       <span className="font-medium">Role:</span>
                       <span className={`ml-1 px-2 py-1 rounded text-xs font-medium ${
                         invitation.role === 'editor' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-blue-100 text-blue-800'
+                          ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' 
+                          : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
                       }`}>
                         {invitation.role}
                       </span>
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-gray-400 dark:text-gray-500">
                       {new Date(invitation.invitedAt).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
               </div>
               
-              <div className="flex gap-3 pt-4 border-t border-gray-100">
+              <div className="flex gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                 <button
                   onClick={() => handleResponse(invitation.story._id, invitation._id, 'accepted')}
                   disabled={processingInvitation === invitation._id}
@@ -222,8 +222,8 @@ const InvitationsPage = () => {
       
       {/* Summary */}
       {invitations.length > 0 && (
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-blue-800 text-sm">
+        <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <p className="text-blue-800 dark:text-blue-300 text-sm">
             📊 You have <strong>{invitations.length}</strong> pending invitation{invitations.length !== 1 ? 's' : ''} 
             waiting for your response.
           </p>

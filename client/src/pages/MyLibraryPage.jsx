@@ -138,9 +138,9 @@ const MyLibraryPage = () => {
   }
 
   return (
-    <div className="container-custom py-8">
+    <div className="container-custom py-8 bg-gray-50 dark:bg-storypad-dark-bg min-h-screen">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">My Library</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-storypad-dark-text">My Library</h1>
         <div className="flex gap-2">
           {readingProgress.length > 0 && (
             <button
@@ -161,20 +161,20 @@ const MyLibraryPage = () => {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <p className="text-red-600">{error}</p>
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+          <p className="text-red-600 dark:text-red-300">{error}</p>
         </div>
       )}
 
       {readingProgress.length === 0 ? (
-        <div className="text-center py-12">
+        <div className="text-center py-12 bg-white dark:bg-storypad-dark-surface rounded-lg shadow">
           <div className="mb-4">
-            <svg className="mx-auto h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <h3 className="text-xl font-medium text-gray-900 mb-2">No reading progress yet</h3>
-          <p className="text-gray-600 mb-6">Start reading stories to build your personal library!</p>
+          <h3 className="text-xl font-medium text-gray-900 dark:text-storypad-dark-text mb-2">No reading progress yet</h3>
+          <p className="text-gray-600 dark:text-storypad-dark-text-light mb-6">Start reading stories to build your personal library!</p>
           <Link to="/browse" className="btn-primary">
             Discover Stories
           </Link>
@@ -213,9 +213,9 @@ const ReadingProgressCard = ({
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 relative">
+    <div className="bg-white dark:bg-storypad-dark-surface rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700 relative">
       {isRemoving && (
-        <div className="absolute inset-0 bg-white bg-opacity-75 rounded-lg flex items-center justify-center z-10">
+        <div className="absolute inset-0 bg-white dark:bg-storypad-dark-surface bg-opacity-75 rounded-lg flex items-center justify-center z-10">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
         </div>
       )}
@@ -231,10 +231,10 @@ const ReadingProgressCard = ({
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-1">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-storypad-dark-text line-clamp-2 mb-1">
                 {story.title}
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-storypad-dark-text-light">
                 by {story.author.username}
               </p>
             </div>
@@ -244,7 +244,7 @@ const ReadingProgressCard = ({
           <button
             onClick={() => setShowRemoveConfirm(true)}
             disabled={isRemoving}
-            className="text-gray-400 hover:text-red-600 transition-colors p-1 ml-2"
+            className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors p-1 ml-2"
             title="Remove from library"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,22 +254,22 @@ const ReadingProgressCard = ({
         </div>
 
         <div className="mb-4">
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-storypad-dark-text-light mb-2">
             <span>Reading Progress</span>
             <span>{progressPercentage}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Last read: {currentChapterTitle}
           </p>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-storypad-dark-text-light mb-4">
           <span>{publishedChapters.length} chapters</span>
           <span>{formatLastRead(progress.lastReadAt)}</span>
         </div>
@@ -294,9 +294,9 @@ const ReadingProgressCard = ({
       {/* Remove confirmation modal */}
       {showRemoveConfirm && (
         <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center z-20">
-          <div className="bg-white p-4 rounded-lg max-w-xs mx-4">
-            <h4 className="font-semibold text-gray-900 mb-2">Remove from Library?</h4>
-            <p className="text-sm text-gray-600 mb-4">
+          <div className="bg-white dark:bg-storypad-dark-surface p-4 rounded-lg max-w-xs mx-4 border dark:border-gray-700">
+            <h4 className="font-semibold text-gray-900 dark:text-storypad-dark-text mb-2">Remove from Library?</h4>
+            <p className="text-sm text-gray-600 dark:text-storypad-dark-text-light mb-4">
               This will delete your reading progress for "{story.title}".
             </p>
             <div className="flex gap-2">
