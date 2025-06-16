@@ -140,7 +140,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get single story (public access for published stories, auth for unpublished)
-router.get('/:id', async (req, res) => {
+router.get('/:id',  authenticateToken, async (req, res) => {
   try {
     console.log(`📖 Fetching story ${req.params.id}`);
     
