@@ -140,86 +140,52 @@ router.get('/', async (req, res) => {
 });
 
 // Get single story (public access for published stories, auth for unpublished)
-router.get('/:id',  authenticateToken, async (req, res) => {
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
     console.log(`📖 Fetching story ${req.params.id}`);
     
     const story = await Story.findById(req.params.id)
       .populate('author', 'username firstName lastName')
-      .populate('collaborators.user', 'username firstName lastName');
+      .populate('collaborators', 'username firstName lastName') // KEEP THIS!
+      .populate('chapters');
 
     if (!story) {
-      return res.status(404).json({ 
-        success: false,
-        message: 'Story not found' 
-      });
+      return res.status(404).json({ success: false, message: 'Story not found' });
     }
 
-    // If story has published chapters, allow public access
-    const hasPublishedChapters = story.chapters.some(ch => ch.published);
-    
-    if (hasPublishedChapters) {
-      // Return only published chapters for public access
-      const publicStory = {
-        ...story.toObject(),
-        chapters: story.chapters.filter(ch => ch.published)
-      };
-      
-      return res.json({
-        success: true,
-        story: publicStory
-      });
-    }
+    // Enhanced permission logic with collaborators
+    console.log('🔍 Story access check:');
+    console.log('Story ID:', story._id);
+    console.log('Story published:', story.published);
+    console.log('Story author ID:', story.author._id.toString());
+    console.log('Current user ID:', req.user.id);
+    console.log('Collaborators:', story.collaborators?.map(c => c._id.toString()));
 
-    // If no published chapters, require authentication
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const isOwner = story.author._id.toString() === req.user.id;
+    const isCollaborator = story.collaborators?.some(
+      collab => collab._id.toString() === req.user.id
+    );
+    const isAdmin = req.user.role === 'admin';
+    const isPublished = story.published;
 
-    if (!token) {
+    // Allow access if:
+    // 1. Story is published, OR
+    // 2. User is the author, OR  
+    // 3. User is a collaborator, OR
+    // 4. User is an admin
+    if (!isPublished && !isOwner && !isCollaborator && !isAdmin) {
+      console.log('❌ Access denied - not published and not owner/collaborator/admin');
       return res.status(403).json({ 
-        success: false,
-        message: 'This story has no published content' 
+        success: false, 
+        message: 'You do not have permission to access this story' 
       });
     }
 
-    // Verify token and check access for unpublished content
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
-
-      // Check if user has access (owner or collaborator)
-      const isOwner = story.author && story.author._id.toString() === req.user.id;
-      const isCollaborator = story.collaborators && story.collaborators.some(
-        collab => collab.user && collab.user._id.toString() === req.user.id
-      );
-
-      if (!isOwner && !isCollaborator) {
-        return res.status(403).json({ 
-          success: false,
-          message: 'Access denied' 
-        });
-      }
-
-      // Return full story for authorized users
-      res.json({
-        success: true,
-        story
-      });
-
-    } catch (jwtError) {
-      return res.status(403).json({ 
-        success: false,
-        message: 'This story has no published content' 
-      });
-    }
-
+    console.log('✅ Access granted:', { isOwner, isCollaborator, isAdmin, isPublished });
+    res.json({ success: true, story });
   } catch (error) {
-    console.error('❌ Error fetching story:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Failed to fetch story',
-      error: error.message 
-    });
+    console.error('Error fetching story:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
