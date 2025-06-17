@@ -12,6 +12,29 @@ const MyStoriesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [storyToDelete, setStoryToDelete] = useState(null);
+
+  // Function to handle story deletion
+  const handleDeleteStory = async (storyId, storyTitle) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/stories/${storyId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setStories(prev => prev.filter(s => s._id !== storyId));
+      } else {
+        alert(result.message || 'Failed to delete story');
+      }
+    } catch (err) {
+      alert('Failed to delete story. Please try again.');
+    }
+  };
 
   const fetchInvitationCount = async () => {
     try {
@@ -106,8 +129,7 @@ const MyStoriesPage = () => {
     <div className="container-custom py-8 bg-gray-50 dark:bg-storypad-dark-bg min-h-screen">
 
       <div className="flex items-center justify-between mb-6">
-
-      <BackButton />
+        <BackButton />
         <h1 className="text-3xl font-bold dark:text-storypad-dark-text">My Stories</h1>
         <Link to="/newwrite" className="btn-primary">
           ✍️ New Story
@@ -203,11 +225,53 @@ const MyStoriesPage = () => {
                   </Link>
                 </div>
               ) : (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {stories.map((story) => (
-                    <StoryCard key={story._id} story={story} />
-                  ))}
-                </div>
+                <>
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {stories.map((story) => (
+                      <StoryCard
+                        key={story._id}
+                        story={story}
+                        handleDeleteStory={() => {
+                          setStoryToDelete(story);
+                          setShowDeleteModal(true);
+                        }}
+                      />
+                    ))}
+                  </div>
+                  {showDeleteModal && storyToDelete && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                      <div className="bg-white dark:bg-storypad-dark-surface p-6 rounded-lg max-w-xs mx-4 border dark:border-gray-700">
+                        <h4 className="font-semibold text-gray-900 dark:text-storypad-dark-text mb-2">
+                          Delete Story?
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-storypad-dark-text-light mb-4">
+                          Are you sure you want to delete "{storyToDelete.title}"? This action cannot be undone.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={async () => {
+                              await handleDeleteStory(storyToDelete._id, storyToDelete.title);
+                              setShowDeleteModal(false);
+                              setStoryToDelete(null);
+                            }}
+                            className="btn-primary text-sm bg-red-600 hover:bg-red-700"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowDeleteModal(false);
+                              setStoryToDelete(null);
+                            }}
+                            className="btn-secondary text-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}
@@ -249,11 +313,20 @@ const MyStoriesPage = () => {
 };
 
 // Story Card Component (for owned stories)
-const StoryCard = ({ story }) => {
+const StoryCard = ({ story, handleDeleteStory }) => {
   const navigate = useNavigate();
-  
+
   return (
-    <div className="bg-white dark:bg-storypad-dark-surface rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700">
+    <div className="relative bg-white dark:bg-storypad-dark-surface rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700">
+      <button
+        onClick={handleDeleteStory}
+        className="absolute top-2 right-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors p-1"
+        title="Delete story"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </button>
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-storypad-dark-text line-clamp-2">
@@ -263,21 +336,17 @@ const StoryCard = ({ story }) => {
             📝 Owner
           </span>
         </div>
-        
         <p className="text-gray-600 dark:text-storypad-dark-text-light text-sm mb-4 line-clamp-3">
           {story.description}
         </p>
-        
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-storypad-dark-text-light mb-4">
           <span>{Array.isArray(story.category) ? story.category.join(' • ') : story.category}</span>
           <span>{story.language}</span>
         </div>
-        
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-storypad-dark-text-light mb-6">
           <span>{story.chaptersCount} chapters</span>
           <span>{story.publishedChapters} published</span>
         </div>
-        
         <div className="flex gap-2">
           {story.completed ? (
             <button
@@ -310,7 +379,7 @@ const StoryCard = ({ story }) => {
 // Collaborative Story Card Component
 const CollaborativeStoryCard = ({ story }) => {
   const navigate = useNavigate();
-  
+
   return (
     <div className="bg-white dark:bg-storypad-dark-surface rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700">
       <div className="p-6">
@@ -322,21 +391,17 @@ const CollaborativeStoryCard = ({ story }) => {
             🤝 Collaborator
           </span>
         </div>
-        
         <p className="text-gray-600 dark:text-storypad-dark-text-light text-sm mb-4 line-clamp-3">
           {story.description}
         </p>
-        
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-storypad-dark-text-light mb-4">
           <span>by {story.author.username}</span>
           <span>{Array.isArray(story.category) ? story.category.join(' • ') : story.category}</span>
         </div>
-        
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-storypad-dark-text-light mb-6">
           <span>{story.chaptersCount} chapters</span>
           <span>{story.publishedChapters} published</span>
         </div>
-        
         <div className="flex gap-2">
           <button
             onClick={() => navigate(`/story/${story._id}/edit`)}
