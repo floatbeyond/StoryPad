@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link, useSearchParams } from 'react-router-dom';
 import BackButton from '../components/BackButton';
+import { handleImageError } from '../utils/imageUtils';
 
 
 const StoryPage = () => {
@@ -274,6 +275,7 @@ const StoryPage = () => {
             src={story.cover}
             alt={story.title}
             className="w-full h-full object-cover"
+            onError={handleImageError}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
         </div>
@@ -285,6 +287,7 @@ const StoryPage = () => {
                   src={story.cover}
                   alt={story.title}
                   className="w-full h-64 object-cover"
+                  onError={handleImageError}
                 />
               </div>
             </div>

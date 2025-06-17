@@ -2,6 +2,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import BackButton from '../components/BackButton';
 import CoverSelector from '../components/CoverSelector';
+import { handleImageError } from '../utils/imageUtils';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -184,6 +185,7 @@ const NewWritePage = () => {
                   src={coverImage}
                   alt="Cover preview"
                   className="w-full h-full object-cover"
+                  onError={handleImageError}
                 />
               </div>
               <div className="flex-1">

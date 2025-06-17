@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { handleImageError } from '../utils/imageUtils';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload`;
@@ -103,6 +104,7 @@ const CoverSelector = ({ currentCover, onCoverSelect, onUpload, storyCategories 
             src={currentCover}
             alt="Current cover"
             className="w-full h-full object-cover"
+            onError={handleImageError}
           />
         </div>
         <div>
@@ -153,10 +155,7 @@ const CoverSelector = ({ currentCover, onCoverSelect, onUpload, storyCategories 
                     src={cover.url}
                     alt={cover.name}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                    onError={(e) => {
-                      console.log('Failed to load cover:', cover.url);
-                      e.target.src = 'https://res.cloudinary.com/dwtcfxtfp/image/upload/v1749068343/default-cover_xrc5et.png';
-                    }}
+                    onError={handleImageError}
                   />
                 </div>
                 

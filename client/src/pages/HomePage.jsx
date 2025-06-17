@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import HorizontalScrollSection from '../components/HorizontalScrollSection'; // ✅ חדש
+import HorizontalScrollSection from '../components/HorizontalScrollSection';
+import { handleImageError } from '../utils/imageUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 

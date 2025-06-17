@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { handleImageError, DEFAULT_COVER } from '../utils/imageUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const DEFAULT_COVER = 'https://res.cloudinary.com/dwtcfxtfp/image/upload/v1749068343/default-cover_xrc5et.png';
 
 const MyLibraryPage = () => {
   const [readingProgress, setReadingProgress] = useState([]);
@@ -228,6 +228,7 @@ const ReadingProgressCard = ({
                 src={story.cover || DEFAULT_COVER}
                 alt={story.title}
                 className="w-full h-full object-cover rounded"
+                onError={handleImageError}
               />
             </div>
             <div className="flex-1 min-w-0">

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
+import { handleImageError } from '../utils/imageUtils';
 
 const HorizontalScrollSection = ({ title, stories }) => {
   const scrollContainerRef = useRef(null);
@@ -144,6 +145,7 @@ const HorizontalScrollSection = ({ title, stories }) => {
                     src={story.cover || "https://via.placeholder.com/200x280?text=No+Cover"}
                     alt={story.title || "Untitled"}
                     className="w-full h-48 md:h-56 object-cover transition-transform duration-300 hover:scale-105"
+                    onError={handleImageError}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 </div>

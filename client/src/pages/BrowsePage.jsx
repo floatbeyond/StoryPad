@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import FiltersPanel from '../components/FiltersPanel';
 import BackButton from '../components/BackButton';
+import { handleImageError } from '../utils/imageUtils';
 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -260,10 +261,7 @@ const BrowsePage = () => {
                               src={story.cover || DEFAULT_COVER} 
                               alt={story.title} 
                               className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex';
-                              }}
+                              onError={handleImageError}
                             />
                             {/* Fallback Cover Design */}
                             <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 

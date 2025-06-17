@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BackButton from '../components/BackButton';
+import { handleImageError } from '../utils/imageUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -63,6 +64,7 @@ const FavoritesPage = () => {
               src={story.cover || "https://via.placeholder.com/150"}
               alt={story.title}
               className="w-full h-48 object-cover rounded-t-lg"
+              onError={handleImageError}
             />
             <div className="p-4">
               <h3 className="text-lg font-semibold text-storypad-dark">{story.title}</h3>
