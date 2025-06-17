@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BackButton from '../components/BackButton';
-import { handleImageError } from '../utils/imageUtils';
+import { handleImageError, getImageWithFallback } from '../utils/imageUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -61,7 +61,7 @@ const FavoritesPage = () => {
             className="card hover:shadow-lg transition-shadow"
           >
             <img
-              src={story.cover || "https://via.placeholder.com/150"}
+              src={getImageWithFallback(story.cover)}
               alt={story.title}
               className="w-full h-48 object-cover rounded-t-lg"
               onError={handleImageError}

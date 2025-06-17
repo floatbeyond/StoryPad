@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { handleImageError, DEFAULT_COVER } from '../utils/imageUtils';
+import { handleImageError, getImageWithFallback } from '../utils/imageUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -225,7 +225,7 @@ const ReadingProgressCard = ({
           <div className="flex items-start space-x-4 flex-1">
             <div className="w-16 h-20 flex-shrink-0">
               <img
-                src={story.cover || DEFAULT_COVER}
+                src={getImageWithFallback(story.cover)}
                 alt={story.title}
                 className="w-full h-full object-cover rounded"
                 onError={handleImageError}

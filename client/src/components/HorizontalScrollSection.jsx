@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import { handleImageError } from '../utils/imageUtils';
+import { handleImageError, getImageWithFallback } from '../utils/imageUtils';
 
 const HorizontalScrollSection = ({ title, stories }) => {
   const scrollContainerRef = useRef(null);
@@ -142,7 +142,7 @@ const HorizontalScrollSection = ({ title, stories }) => {
               >
                 <div className="relative overflow-hidden rounded-t-lg">
                   <img
-                    src={story.cover || "https://via.placeholder.com/200x280?text=No+Cover"}
+                    src={getImageWithFallback(story.cover)}
                     alt={story.title || "Untitled"}
                     className="w-full h-48 md:h-56 object-cover transition-transform duration-300 hover:scale-105"
                     onError={handleImageError}

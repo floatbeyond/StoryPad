@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import FiltersPanel from '../components/FiltersPanel';
 import BackButton from '../components/BackButton';
-import { handleImageError } from '../utils/imageUtils';
+import { handleImageError, getImageWithFallback } from '../utils/imageUtils';
 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -258,7 +258,7 @@ const BrowsePage = () => {
                         <div className="flex-shrink-0 w-48">
                           <div className="aspect-[3/4] relative rounded-lg overflow-hidden">
                             <img 
-                              src={story.cover || DEFAULT_COVER} 
+                              src={getImageWithFallback(story.cover)} 
                               alt={story.title} 
                               className="w-full h-full object-cover"
                               onError={handleImageError}
