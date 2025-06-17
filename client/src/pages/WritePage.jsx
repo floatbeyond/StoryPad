@@ -823,27 +823,25 @@ const WritePage = () => {
                 )}
               </button>
                 
-              <button
-                type="button"
-                className="px-4 lg:px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 
-                  transition-colors flex items-center justify-center space-x-2 text-sm lg:text-base"
-                onClick={() => setShowPublishModal(true)}
-                disabled={!storyId || storyId === 'new' || loading || story?.completed}
-              >
-                <span>📚</span>
-                <span>Publish Chapters</span>
-              </button>
+           <button
+              type="button"
+              className="px-4 lg:px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center space-x-2 text-sm lg:text-base"
+              onClick={() => setShowPublishModal(true)}
+              disabled={!storyId || storyId === 'new' || loading || story?.completed}
+            >
+              <span>📚</span>
+              <span>Publish Chapters</span>
+            </button>
 
-              <button
-                type="button"
-                className="px-4 lg:px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 
-                  transition-colors flex items-center justify-center space-x-2 text-sm lg:text-base"
-                onClick={handleComplete}
-                disabled={!storyId || storyId === 'new' || loading || story?.completed}
-              >
-                <span>✅</span>
-                <span>Complete Story</span>
-              </button>
+          <button
+            type="button"
+            className="px-4 lg:px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 text-sm lg:text-base"
+            onClick={handleComplete}
+            disabled={!storyId || storyId === 'new' || loading || story?.completed}
+          >
+            <span>✅</span>
+            <span>Complete Story</span>
+          </button>
             </div>
           </div>
 
