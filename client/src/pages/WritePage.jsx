@@ -5,14 +5,12 @@ import CollaborativeEditor from '../components/CollaborativeEditor';
 import PublishModal from '../components/PublishModal';
 import BackButton from '../components/BackButton';
 import CoverSelector from '../components/CoverSelector';
+import { handleImageError } from '../utils/imageUtils.jsx';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const DEFAULT_COVER = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/default-cover.png`;
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-// Add debug log
-console.log('🔍 WritePage Cloudinary config:', { CLOUD_NAME, DEFAULT_COVER });
 
 const WritePage = () => {
   // Route and navigation
@@ -28,7 +26,7 @@ const WritePage = () => {
   const [story, setStory] = useState(null);
   const [chapters, setChapters] = useState([{ title: "", content: "" }]);
   const [activeChapter, setActiveChapter] = useState(0);
-  const [coverImage, setCoverImage] = useState(DEFAULT_COVER);
+  const [coverImage, setCoverImage] = useState(null); // Changed: Don't set default immediately
   const [imageFile, setImageFile] = useState(null);
 
   // User and collaboration states
@@ -71,8 +69,6 @@ const WritePage = () => {
 
     const loadExistingStory = async () => {
       try {
-        console.log('📖 Loading existing story for editing:', storyId);
-        
         const token = localStorage.getItem('token');
         if (!token) {
           throw new Error('Authentication required');
@@ -90,18 +86,14 @@ const WritePage = () => {
 
         if (!response.ok) {
           if (response.status === 403) {
-            console.log('❌ Permission denied for story editing');
             setPermissionError(true);
             return;
           } else if (response.status === 404) {
-            console.log('❌ Story not found');
-            navigate('/404'); // Or your 404 page
+            navigate('/404');
             return;
           }
           throw new Error(data.message || 'Failed to load story');
         }
-
-        console.log('✅ Story loaded for editing:', data);
 
         if (data.success && data.story) {
           setStory(data.story);
@@ -127,8 +119,6 @@ const WritePage = () => {
           
           // Set cover image
           setCoverImage(data.story.cover || DEFAULT_COVER);
-          
-          console.log('📚 Editor initialized successfully');
         }
       } catch (error) {
         console.error('❌ Load story error:', error);
@@ -149,18 +139,12 @@ const WritePage = () => {
     }
   }, [storyId, navigate]);
 
-  // Update the permission logic in WritePage.jsx:
+  // Update the permission logic
   useEffect(() => {
     const checkPermissions = () => {
       if (story) {
         const userId = localStorage.getItem('userId') || 
                       JSON.parse(localStorage.getItem('user') || '{}').id;
-        
-        console.log('🔍 Checking permissions:', {
-          userId,
-          authorId: typeof story.author === 'object' ? story.author._id : story.author,
-          collaborators: story.collaborators?.map(c => typeof c === 'object' ? c._id : c)
-        });
         
         const authorId = typeof story.author === 'object' ? story.author._id : story.author;
         const isStoryOwner = authorId === userId;
@@ -172,11 +156,6 @@ const WritePage = () => {
         
         setIsOwner(isStoryOwner);
         setIsCollaborator(isStoryCollaborator);
-        
-        console.log('✅ Permissions set:', { 
-          isOwner: isStoryOwner, 
-          isCollaborator: isStoryCollaborator 
-        });
       }
     };
 
@@ -186,7 +165,6 @@ const WritePage = () => {
   // Auto-save functionality
   useEffect(() => {
     if (saveStatus === 'unsaved' && storyId && storyId !== 'new') {
-      console.log('🔄 Auto-save triggered, current coverImage:', coverImage);
       const autoSaveTimer = setTimeout(() => {
         handleSave(true); // silent save
       }, 5000);
@@ -233,7 +211,6 @@ const WritePage = () => {
       const data = await response.json();
       if (data.success) {
         const newCoverUrl = data.coverUrl || data.cover || data.url || data.secure_url || data.path;
-        console.log('New cover URL:', newCoverUrl);
         setCoverImage(newCoverUrl);
         setStory(prev => ({ ...prev, cover: newCoverUrl }));
         setSuccess('Cover image updated successfully!');
@@ -350,8 +327,11 @@ const WritePage = () => {
           return;
         }
         
-        setStory(data.story);
-        // DON'T reset the cover image - keep the current one
+        // DON'T override the entire story - preserve the current cover image
+        setStory(prev => ({
+          ...data.story,
+          cover: coverImage // Keep the current cover image instead of using server response
+        }));
         setSaveStatus('saved');
         setError(null);
         
@@ -469,34 +449,13 @@ const WritePage = () => {
     setCoverImage(coverUrl);
     setShowCoverSelector(false);
     
-    // If this is an existing story, save the new cover
-    if (storyId && storyId !== 'new') {
-      handleSaveCoverUrl(coverUrl);
-    }
-  };
-
-  const handleSaveCoverUrl = async (coverUrl) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/stories/${storyId}/cover-url`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ coverUrl })
-      });
-
-      if (!response.ok) throw new Error('Failed to update cover');
-
-      const data = await response.json();
-      if (data.success) {
-        setStory(prev => ({ ...prev, cover: coverUrl }));
-        setSuccess('Cover updated successfully!');
-        setTimeout(() => setSuccess(null), 3000);
-      }
-    } catch (err) {
-      setError('Failed to update cover: ' + err.message);
-    }
+    // Mark as unsaved instead of auto-saving
+    setSaveStatus('unsaved');
+    
+    // Remove the automatic save call - let user save manually
+    // if (storyId && storyId !== 'new') {
+    //   handleSaveCoverUrl(coverUrl);
+    // }
   };
 
   // Loading state
@@ -574,13 +533,10 @@ const WritePage = () => {
               <div className="w-32 md:w-48 flex-shrink-0 mx-auto md:mx-0">
                 <div className="relative aspect-[3/4] rounded-lg overflow-hidden shadow-md">
                   <img
-                    src={coverImage}
+                    src={coverImage || DEFAULT_COVER} // Add fallback here too
                     alt={story.title || 'Story cover'}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.log('Image failed to load, using default');
-                      e.target.src = DEFAULT_COVER;
-                    }}
+                    onError={handleImageError}
                   />
                   {isOwner && (
                     <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity">

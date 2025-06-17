@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcrypt'; // CHANGE: bcrypt instead of bcryptjs
+import bcrypt from 'bcrypt';
 
 const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
@@ -7,6 +7,12 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  profilePicture: { 
+    type: String, 
+    default: function() {
+      return `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/default-profile.png`;
+    }
+  },
   role: { 
     type: String, 
     enum: ['user', 'admin'], 

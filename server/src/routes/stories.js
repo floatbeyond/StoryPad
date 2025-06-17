@@ -17,10 +17,24 @@ router.get('/default-cover', (req, res) => {
 // Create story
 router.post('/', authenticateToken, upload.single('cover'), async (req, res) => {
   try {
-    console.log('📝 Received new story request');
+    const { title, description, category, language, coverUrl } = req.body;
     
-    const { title, description, category, language } = req.body;
-    const coverImage = req.file ? req.file.path : process.env.DEFAULT_COVER_URL;
+    // Handle cover image logic properly
+    let coverImage;
+    
+    if (req.file) {
+      // File was uploaded
+      coverImage = req.file.path;
+    } else if (req.body.cover && req.body.cover.startsWith('http')) {
+      // Cover URL was sent as 'cover' field (your current approach)
+      coverImage = req.body.cover;
+    } else if (coverUrl) {
+      // Cover URL was sent as 'coverUrl' field (fallback)
+      coverImage = coverUrl;
+    } else {
+      // Use default
+      coverImage = process.env.DEFAULT_COVER_URL;
+    }
 
     if (!title || !description || !Array.isArray(JSON.parse(category)) || JSON.parse(category).length === 0 || !language) {
       return res.status(400).json({ 
@@ -47,7 +61,6 @@ router.post('/', authenticateToken, upload.single('cover'), async (req, res) => 
     });
 
     await newStory.save();
-    console.log('✅ Story saved successfully:', newStory._id);
 
     res.status(201).json({
       success: true,
@@ -68,8 +81,6 @@ router.post('/', authenticateToken, upload.single('cover'), async (req, res) => 
 // Get all published stories (stories with at least one published chapter)
 router.get('/published', async (req, res) => {
   try {
-    console.log('📚 Fetching stories with published chapters...');
-    
     const stories = await Story.find({ 
       published: true, // Story is marked as published
       'chapters.published': true // AND has at least one published chapter
@@ -97,14 +108,6 @@ router.get('/published', async (req, res) => {
         } : null
       };
     });
-
-    console.log(`📊 Found ${stories.length} stories with published chapters`);
-    console.log('📝 Sample stories:', processedStories.slice(0, 3).map(s => ({
-      title: s.title,
-      author: s.author.username,
-      publishedChapters: s.chapterStats.published,
-      totalChapters: s.chapterStats.total
-    })));
 
     res.json({
       success: true,
@@ -144,8 +147,6 @@ router.get('/', async (req, res) => {
 // Get single story (public access for published stories, auth for unpublished)
 router.get('/:id', async (req, res) => {
   try {
-    console.log(`📖 Fetching story ${req.params.id}`);
-    
     const story = await Story.findById(req.params.id)
       .populate('author', 'username firstName lastName')
       .populate('collaborators', 'username firstName lastName')
@@ -162,13 +163,10 @@ router.get('/:id', async (req, res) => {
 
     if (token) {
       try {
-        user = jwt.verify(token, process.env.JWT_SECRET); // ✅ Use the imported jwt
-        console.log('✅ User authenticated:', user.username || user.id);
+        user = jwt.verify(token, process.env.JWT_SECRET);
       } catch (err) {
-        console.log('❌ Invalid token provided, treating as unauthenticated user');
+        // Invalid token, treat as unauthenticated user
       }
-    } else {
-      console.log('📝 No token provided');
     }
 
     // Permission logic
@@ -178,16 +176,7 @@ router.get('/:id', async (req, res) => {
     );
     const isAdmin = user && user.role === 'admin';
     const isPublished = story.published;
-    const isAuthenticated = !!user; // This is the key fix!
-
-    console.log('🔍 Story access check:', {
-      storyId: story._id,
-      published: isPublished,
-      authenticated: isAuthenticated, // Should show true when logged in
-      isOwner,
-      isCollaborator,
-      isAdmin
-    });
+    const isAuthenticated = !!user;
 
     // Access rules for unpublished stories
     if (!isPublished && !isOwner && !isCollaborator && !isAdmin) {
@@ -201,7 +190,7 @@ router.get('/:id', async (req, res) => {
     let responseStory = { ...story.toObject() };
     let requiresAuth = false;
 
-    // FIXED: Only show preview if story is published AND user is NOT authenticated
+    // Only show preview if story is published AND user is NOT authenticated
     if (isPublished && !isAuthenticated) {
       // Provide preview for non-authenticated users ONLY
       requiresAuth = true;
@@ -228,7 +217,7 @@ router.get('/:id', async (req, res) => {
               ...chapter,
               content: previewContent,
               isPreview: true,
-              hasMore: previewContent.length < content.length // Add this flag
+              hasMore: previewContent.length < content.length
             };
           } else {
             // Other chapters: show title only
@@ -242,13 +231,8 @@ router.get('/:id', async (req, res) => {
           }
         });
       }
-
-      console.log('📖 Providing preview version for unauthenticated user');
     } else {
-      // FIXED: For authenticated users OR unpublished stories (with proper access), show full content
-      console.log('✅ Providing full access - user is authenticated or has special access');
-      
-      // Ensure chapters don't have preview flags for authenticated users
+      // For authenticated users OR unpublished stories (with proper access), show full content
       if (responseStory.chapters) {
         responseStory.chapters = responseStory.chapters.map(chapter => ({
           ...chapter,
@@ -268,7 +252,7 @@ router.get('/:id', async (req, res) => {
       story: responseStory,
       requiresAuth,
       isPreview: requiresAuth,
-      isAuthenticated, // Add this for frontend debugging
+      isAuthenticated,
       message: requiresAuth ? 'Preview mode - login for full access' : null
     });
   } catch (error) {
@@ -338,8 +322,6 @@ router.put('/:id', authenticateToken, async (req, res) => {
 // Update story cover (handles both file upload and URL)
 router.put('/:id/cover', authenticateToken, upload.single('cover'), async (req, res) => {
   try {
-    console.log(`📸 Updating cover for story ${req.params.id}`);
-    
     const story = await Story.findById(req.params.id);
     if (!story) {
       return res.status(404).json({ success: false, message: 'Story not found' });
@@ -361,12 +343,9 @@ router.put('/:id/cover', authenticateToken, upload.single('cover'), async (req, 
     // Check if this is a URL update (no file uploaded)
     if (req.body.coverUrl && !req.file) {
       coverUrl = req.body.coverUrl;
-      console.log('📎 Using provided cover URL:', coverUrl);
     } 
     // Handle file upload
     else if (req.file) {
-      console.log('📁 Processing uploaded file:', req.file.originalname);
-      
       // Upload to Cloudinary
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: `storypad/covers/user-uploads/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}`,
@@ -379,7 +358,6 @@ router.put('/:id/cover', authenticateToken, upload.single('cover'), async (req, 
       });
 
       coverUrl = result.secure_url;
-      console.log('☁️ Uploaded to Cloudinary:', coverUrl);
 
       // Clean up temp file
       fs.unlinkSync(req.file.path);
@@ -391,13 +369,11 @@ router.put('/:id/cover', authenticateToken, upload.single('cover'), async (req, 
     story.cover = coverUrl;
     await story.save();
 
-    console.log(`✅ Cover updated successfully for story ${story._id}`);
-
     res.json({ 
       success: true, 
       message: 'Cover updated successfully',
       cover: coverUrl,
-      coverUrl: coverUrl // Add this for compatibility
+      coverUrl: coverUrl
     });
 
   } catch (error) {
@@ -744,10 +720,8 @@ router.delete('/:id/invitations/:invitationId', authenticateToken, async (req, r
 router.put('/:storyId/invitations/:invitationId', authenticateToken, async (req, res) => {
   try {
     const { storyId, invitationId } = req.params;
-    const { response } = req.body; // 'accepted' or 'declined'
+    const { response } = req.body;
     const userId = req.user.id;
-
-    console.log(`📝 Processing invitation response: ${response} for invitation ${invitationId}`);
 
     if (!['accepted', 'declined'].includes(response)) {
       return res.status(400).json({
@@ -794,8 +768,6 @@ router.put('/:storyId/invitations/:invitationId', authenticateToken, async (req,
         role: invitation.role,
         joinedAt: new Date()
       });
-      
-      console.log('✅ User added as collaborator');
     }
 
     // Update invitation status
@@ -803,8 +775,6 @@ router.put('/:storyId/invitations/:invitationId', authenticateToken, async (req,
     invitation.respondedAt = new Date();
 
     await story.save();
-
-    console.log(`✅ Invitation ${response} successfully`);
 
     res.json({
       success: true,
@@ -896,29 +866,14 @@ router.post('/:id/unlike', authenticateToken, async (req, res) => {
 // Get story for editing (collaborators and owners only)
 router.get('/:id/edit', authenticateToken, async (req, res) => {
   try {
-    console.log(`✏️ Fetching story ${req.params.id} for editing by user ${req.user.id}`);
-    
     const story = await Story.findById(req.params.id)
       .populate('author', 'username firstName lastName email')
-      .populate('collaborators.user', 'username firstName lastName email') // Populate nested user
+      .populate('collaborators.user', 'username firstName lastName email')
       .populate('chapters');
 
     if (!story) {
       return res.status(404).json({ success: false, message: 'Story not found' });
     }
-
-    // Debug: Log the actual structure
-    console.log('🔍 Permission check debug:', {
-      storyId: story._id,
-      requestingUserId: req.user.id,
-      authorIdString: story.author._id.toString(),
-      collaborators: story.collaborators?.map(c => ({
-        collaboratorId: c._id.toString(),
-        userId: c.user._id.toString(),
-        username: c.user.username,
-        role: c.role
-      }))
-    });
 
     // Check permissions for editing
     const isOwner = story.author._id.toString() === req.user.id.toString();
@@ -927,16 +882,8 @@ router.get('/:id/edit', authenticateToken, async (req, res) => {
     );
     const isAdmin = req.user.role === 'admin';
 
-    console.log('🔍 Permission results:', {
-      isOwner,
-      isCollaborator,
-      isAdmin,
-      hasAccess: isOwner || isCollaborator || isAdmin
-    });
-
     // Only owners, collaborators, or admins can edit
     if (!isOwner && !isCollaborator && !isAdmin) {
-      console.log('❌ Access denied for user:', req.user.id);
       return res.status(403).json({ 
         success: false, 
         message: 'You do not have permission to edit this story' 
@@ -954,8 +901,6 @@ router.get('/:id/edit', authenticateToken, async (req, res) => {
         canEdit: true
       }
     });
-
-    console.log('✅ Story edit access granted for:', req.user.username || req.user.id);
 
   } catch (error) {
     console.error('❌ Error fetching story for editing:', error);
@@ -1061,12 +1006,10 @@ router.post('/invitations/:invitationId/accept', authenticateToken, async (req, 
 
     await story.save();
 
-    console.log(`✅ User ${req.user.id} accepted invitation for story ${story._id}`);
-
     res.json({ 
       success: true, 
       message: 'Invitation accepted successfully',
-      redirectUrl: `/story/${story._id}/edit` // ✅ New URL format
+      redirectUrl: `/story/${story._id}/edit`
     });
 
   } catch (error) {

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import { handleImageError, getImageWithFallback } from '../utils/imageUtils';
+import { handleImageError, getImageWithFallback } from '../utils/imageUtils.jsx';
 
 const HorizontalScrollSection = ({ title, stories }) => {
   const scrollContainerRef = useRef(null);
@@ -8,10 +8,6 @@ const HorizontalScrollSection = ({ title, stories }) => {
   const [maxScroll, setMaxScroll] = useState(0);
   const [showScrollbar, setShowScrollbar] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    console.log(`📦 HorizontalScrollSection (${title}) stories:`, stories);
-  }, [stories, title]);
 
   // Check if device is mobile
   useEffect(() => {

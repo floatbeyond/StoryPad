@@ -15,7 +15,6 @@ const Navbar = () => {
   useEffect(() => {
     setUsername(localStorage.getItem('username'));
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-        console.log('👤 User data in localStorage:', user); // DEBUG
     setUserRole(user.role);
     
     if (localStorage.getItem('token')) {

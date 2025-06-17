@@ -2,7 +2,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import BackButton from '../components/BackButton';
 import CoverSelector from '../components/CoverSelector';
-import { handleImageError } from '../utils/imageUtils';
+import { handleImageError } from '../utils/imageUtils.jsx';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -70,21 +70,9 @@ const NewWritePage = () => {
 
   //Fix the handleCoverSelect to prevent form reset
   const handleCoverSelect = (coverUrl) => {
-    console.log('🔍 Before cover select:', {
-      title: formRef.current?.title?.value,
-      description: formRef.current?.description?.value,
-      coverImage: coverImage
-    });
-    
     setCoverImage(coverUrl);
     setImageFile(null);
-    setShowCoverSelector(false); // ← This state change might be causing re-render
-    
-    console.log('🔍 After cover select:', {
-      title: formRef.current?.title?.value,
-      description: formRef.current?.description?.value,
-      coverImage: coverUrl
-    });
+    setShowCoverSelector(false);
   };
 
   // Add form validation before creating story
@@ -121,9 +109,12 @@ const NewWritePage = () => {
       if (imageFile) {
         // User uploaded a custom image
         formData.append('cover', imageFile);
-      } else if (coverImage !== DEFAULT_COVER) {
+      } else if (coverImage && coverImage !== DEFAULT_COVER) {
         // User selected a predefined cover
-        formData.append('coverUrl', coverImage);
+        formData.append('cover', coverImage);
+      } else {
+        // Use default cover
+        formData.append('cover', DEFAULT_COVER);
       }
 
       const response = await fetch(`${API_BASE_URL}/api/stories`, {
@@ -144,7 +135,7 @@ const NewWritePage = () => {
 
       if (response.ok) {
         setSuccess("Story created successfully!");
-        setTimeout(() => navigate(`/story/${result.story._id}/edit`), 500); // ✅ Use new edit route
+        setTimeout(() => navigate(`/story/${result.story._id}/edit`), 500);
       } else {
         throw new Error(result.message || "Failed to create story");
       }

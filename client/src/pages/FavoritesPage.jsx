@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BackButton from '../components/BackButton';
-import { handleImageError, getImageWithFallback } from '../utils/imageUtils';
+import { handleImageError, getImageWithFallback } from '../utils/imageUtils.jsx';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 

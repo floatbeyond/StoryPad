@@ -50,7 +50,6 @@ const InvitationsPage = () => {
     setProcessingInvitation(invitationId);
     try {
       const token = localStorage.getItem('token');
-      console.log(`📝 Responding to invitation ${invitationId} with: ${response}`);
       
       const res = await fetch(`${API_BASE_URL}/api/stories/${storyId}/invitations/${invitationId}`, {
         method: 'PUT',
@@ -64,7 +63,6 @@ const InvitationsPage = () => {
       const data = await res.json();
       
       if (res.ok) {
-        console.log('✅ Response sent successfully');
         // Remove the invitation from the list
         setInvitations(prev => prev.filter(inv => inv._id !== invitationId));
         

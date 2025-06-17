@@ -14,12 +14,16 @@ const MyStoriesPage = () => {
   const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [storyToDelete, setStoryToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Function to handle story deletion
-  const handleDeleteStory = async (storyId, storyTitle) => {
+  const handleDeleteStory = async () => {
+    if (!storyToDelete) return;
+    
+    setIsDeleting(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/stories/${storyId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/stories/${storyToDelete._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -27,12 +31,16 @@ const MyStoriesPage = () => {
       });
       const result = await response.json();
       if (response.ok && result.success) {
-        setStories(prev => prev.filter(s => s._id !== storyId));
+        setStories(prev => prev.filter(s => s._id !== storyToDelete._id));
+        setShowDeleteModal(false);
+        setStoryToDelete(null);
       } else {
         alert(result.message || 'Failed to delete story');
       }
     } catch (err) {
       alert('Failed to delete story. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -131,7 +139,7 @@ const MyStoriesPage = () => {
       <div className="flex items-center justify-between mb-6">
         <BackButton />
         <h1 className="text-3xl font-bold dark:text-storypad-dark-text">My Stories</h1>
-        <Link to="/newwrite" className="btn-primary">
+        <Link to="/write" className="btn-primary">
           ✍️ New Story
         </Link>
       </div>
@@ -238,32 +246,41 @@ const MyStoriesPage = () => {
                       />
                     ))}
                   </div>
+                  
+                  {/* Custom delete modal matching MyLibraryPage style */}
                   {showDeleteModal && storyToDelete && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                      <div className="bg-white dark:bg-storypad-dark-surface p-6 rounded-lg max-w-xs mx-4 border dark:border-gray-700">
-                        <h4 className="font-semibold text-gray-900 dark:text-storypad-dark-text mb-2">
-                          Delete Story?
-                        </h4>
-                        <p className="text-sm text-gray-600 dark:text-storypad-dark-text-light mb-4">
-                          Are you sure you want to delete "{storyToDelete.title}"? This action cannot be undone.
-                        </p>
-                        <div className="flex gap-2">
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                      <div className="bg-white dark:bg-storypad-dark-surface p-6 rounded-lg max-w-sm mx-4 border dark:border-gray-700">
+                        <div className="text-center mb-4">
+                          <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </div>
+                          <h4 className="font-semibold text-gray-900 dark:text-storypad-dark-text mb-2">Delete Story?</h4>
+                          <p className="text-sm text-gray-600 dark:text-storypad-dark-text-light">
+                            Are you sure you want to delete <strong>"{storyToDelete.title}"</strong>? This action cannot be undone.
+                          </p>
+                        </div>
+                        <div className="flex gap-3">
                           <button
                             onClick={async () => {
-                              await handleDeleteStory(storyToDelete._id, storyToDelete.title);
+                              await handleDeleteStory();
                               setShowDeleteModal(false);
                               setStoryToDelete(null);
                             }}
-                            className="btn-primary text-sm bg-red-600 hover:bg-red-700"
+                            disabled={isDeleting}
+                            className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
                           >
-                            Delete
+                            {isDeleting ? 'Deleting...' : 'Delete'}
                           </button>
                           <button
                             onClick={() => {
                               setShowDeleteModal(false);
                               setStoryToDelete(null);
                             }}
-                            className="btn-secondary text-sm"
+                            disabled={isDeleting}
+                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-storypad-dark-surface rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
                           >
                             Cancel
                           </button>
@@ -318,35 +335,46 @@ const StoryCard = ({ story, handleDeleteStory }) => {
 
   return (
     <div className="relative bg-white dark:bg-storypad-dark-surface rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700">
-      <button
-        onClick={handleDeleteStory}
-        className="absolute top-2 right-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors p-1"
-        title="Delete story"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-      </button>
       <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-storypad-dark-text line-clamp-2">
-            {story.title}
-          </h3>
-          <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs px-2 py-1 rounded-full whitespace-nowrap ml-2">
-            📝 Owner
-          </span>
+        {/* Header with title and badges */}
+        <div className="flex items-start gap-3 mb-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-storypad-dark-text line-clamp-2 pr-2">
+              {story.title}
+            </h3>
+          </div>
+          
+          {/* Right side: Badge and Delete button */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs px-2 py-1 rounded-full whitespace-nowrap">
+              📝 Owner
+            </span>
+            <button
+              onClick={handleDeleteStory}
+              className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+              title="Delete story"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
         </div>
+
         <p className="text-gray-600 dark:text-storypad-dark-text-light text-sm mb-4 line-clamp-3">
           {story.description}
         </p>
+        
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-storypad-dark-text-light mb-4">
           <span>{Array.isArray(story.category) ? story.category.join(' • ') : story.category}</span>
           <span>{story.language}</span>
         </div>
+        
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-storypad-dark-text-light mb-6">
           <span>{story.chaptersCount} chapters</span>
           <span>{story.publishedChapters} published</span>
         </div>
+        
         <div className="flex gap-2">
           {story.completed ? (
             <button

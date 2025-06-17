@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link, useSearchParams } from 'react-router-dom';
 import BackButton from '../components/BackButton';
-import { handleImageError } from '../utils/imageUtils';
+import { handleImageError } from '../utils/imageUtils.jsx';
 
 
 const StoryPage = () => {
@@ -46,14 +46,11 @@ const StoryPage = () => {
         }
 
         const data = await response.json();
-        console.log('📖 Story response:', data); // Debug the response
         
         if (data.success) {
           setStory(data.story);
-          setIsPreview(data.isPreview || false); // Make sure this line exists
-          setRequiresAuth(data.requiresAuth || false); // Make sure this line exists
-          
-          console.log('📖 Preview state set to:', data.isPreview); // Debug
+          setIsPreview(data.isPreview || false);
+          setRequiresAuth(data.requiresAuth || false);
         }
       } catch (error) {
         console.error('Load story error:', error);

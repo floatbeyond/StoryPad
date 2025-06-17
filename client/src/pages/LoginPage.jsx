@@ -20,11 +20,10 @@ const LoginPage = () => {
       });
       const result = await response.json();
       if (response.ok) {
-        localStorage.setItem("username", result.user.username); // Save username from backend
-        localStorage.setItem("token", result.token); // Save token from backend
-        localStorage.setItem('user', JSON.stringify(result.user)); // Sets user data in local storage
-        localStorage.setItem('userId', result.user?.id || result.user?._id); // Add this line
-        console.log('💾 Stored user data:',  result.user); // DEBUG
+        localStorage.setItem("username", result.user.username);
+        localStorage.setItem("token", result.token);
+        localStorage.setItem('user', JSON.stringify(result.user));
+        localStorage.setItem('userId', result.user?.id || result.user?._id);
         navigate("/");
       } else {
         setError(result.message || "Login failed");

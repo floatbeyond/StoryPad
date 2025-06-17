@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { handleImageError } from '../utils/imageUtils';
+import { handleImageError } from '../utils/imageUtils.jsx';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_BASE = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload`;

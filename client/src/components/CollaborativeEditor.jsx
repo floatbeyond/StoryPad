@@ -34,11 +34,8 @@ const CollaborativeEditor = ({
   useEffect(() => {
     // Only connect if we have all required data
     if (!storyId || storyId === 'new' || !currentUser) {
-      console.log('🔌 Skipping Socket.IO connection - missing data:', { storyId, currentUser });
       return;
     }
-
-    console.log('🔌 Connecting to Socket.IO...', { storyId, currentUser });
 
     // Connect to WebSocket
     const newSocket = io(SOCKET_URL, {
@@ -49,8 +46,6 @@ const CollaborativeEditor = ({
 
     // Handle connection
     newSocket.on('connect', () => {
-      console.log('✅ Connected to Socket.IO server');
-      
       // Join the story room
       newSocket.emit('join-story', {
         storyId,
@@ -66,7 +61,6 @@ const CollaborativeEditor = ({
 
     // Listen for text changes from other users
     newSocket.on('text-change', (data) => {
-      console.log('📝 Received text change:', data);
       if (data.chapterIndex === chapterIndex) {
         isRemoteChange.current = true;
         onChange(data.content);
@@ -92,7 +86,6 @@ const CollaborativeEditor = ({
 
     // Listen for user joined/left
     newSocket.on('user-joined', (user) => {
-      console.log('👤 User joined:', user);
       setActiveUsers(prev => {
         // Remove existing user and add new one to avoid duplicates
         const filtered = prev.filter(u => u.userId !== user.userId);
@@ -101,7 +94,6 @@ const CollaborativeEditor = ({
     });
 
     newSocket.on('user-left', (user) => {
-      console.log('👋 User left:', user);
       setActiveUsers(prev => prev.filter(u => u.userId !== user.userId));
       setCursors(prev => {
         const newCursors = new Map(prev);
@@ -111,13 +103,11 @@ const CollaborativeEditor = ({
     });
 
     newSocket.on('active-users', (users) => {
-      console.log('👥 Active users:', users);
       setActiveUsers(users.filter(u => u.userId !== currentUser.id));
     });
 
     // Cleanup on unmount
     return () => {
-      console.log('🔌 Disconnecting from Socket.IO');
       newSocket.disconnect();
     };
   }, [storyId, chapterIndex, currentUser]);
@@ -129,7 +119,6 @@ const CollaborativeEditor = ({
 
     // Only send to others if this is a local change and we have a socket connection
     if (!isRemoteChange.current && socket && socket.connected) {
-      console.log('📤 Sending text change to others');
       socket.emit('text-change', {
         content: newValue,
         chapterIndex: chapterIndex,
@@ -232,17 +221,6 @@ const CollaborativeEditor = ({
           )}
         </div>
       </div>
-
-      {/* Debugging info (remove in production) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-600">
-          <div>Story ID: {storyId}</div>
-          <div>Chapter: {chapterIndex}</div>
-          <div>User: {currentUser?.username}</div>
-          <div>Socket ID: {socket?.id}</div>
-          <div>Active cursors: {cursors.size}</div>
-        </div>
-      )}
     </div>
   );
 };

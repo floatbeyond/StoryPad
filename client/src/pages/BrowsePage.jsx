@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import FiltersPanel from '../components/FiltersPanel';
 import BackButton from '../components/BackButton';
-import { handleImageError, getImageWithFallback } from '../utils/imageUtils';
+import { handleImageError, getImageWithFallback } from '../utils/imageUtils.jsx';
 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';

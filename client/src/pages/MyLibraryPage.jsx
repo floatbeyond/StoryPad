@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { handleImageError, getImageWithFallback } from '../utils/imageUtils';
+import { handleImageError, getImageWithFallback } from '../utils/imageUtils.jsx';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -221,34 +221,34 @@ const ReadingProgressCard = ({
       )}
       
       <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-start space-x-4 flex-1">
-            <div className="w-16 h-20 flex-shrink-0">
-              <img
-                src={getImageWithFallback(story.cover)}
-                alt={story.title}
-                className="w-full h-full object-cover rounded"
-                onError={handleImageError}
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-storypad-dark-text line-clamp-2 mb-1">
-                {story.title}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-storypad-dark-text-light">
-                by {story.author.username}
-              </p>
-            </div>
+        {/* Header section with better layout */}
+        <div className="flex items-start gap-4 mb-4">
+          <div className="w-16 h-20 flex-shrink-0">
+            <img
+              src={getImageWithFallback(story.cover)}
+              alt={story.title}
+              className="w-full h-full object-cover rounded"
+              onError={handleImageError}
+            />
           </div>
           
-          {/* Remove button */}
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-storypad-dark-text line-clamp-2 mb-1">
+              {story.title}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-storypad-dark-text-light">
+              by {story.author.username}
+            </p>
+          </div>
+          
+          {/* Remove button - positioned better */}
           <button
             onClick={() => setShowRemoveConfirm(true)}
             disabled={isRemoving}
-            className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors p-1 ml-2"
+            className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors p-2 rounded hover:bg-red-50 dark:hover:bg-red-900/20 flex-shrink-0"
             title="Remove from library"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </button>
@@ -292,27 +292,34 @@ const ReadingProgressCard = ({
         </div>
       </div>
 
-      {/* Remove confirmation modal */}
+      {/* Improved confirmation modal */}
       {showRemoveConfirm && (
         <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center z-20">
-          <div className="bg-white dark:bg-storypad-dark-surface p-4 rounded-lg max-w-xs mx-4 border dark:border-gray-700">
-            <h4 className="font-semibold text-gray-900 dark:text-storypad-dark-text mb-2">Remove from Library?</h4>
-            <p className="text-sm text-gray-600 dark:text-storypad-dark-text-light mb-4">
-              This will delete your reading progress for "{story.title}".
-            </p>
-            <div className="flex gap-2">
+          <div className="bg-white dark:bg-storypad-dark-surface p-6 rounded-lg max-w-sm mx-4 border dark:border-gray-700">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h4 className="font-semibold text-gray-900 dark:text-storypad-dark-text mb-2">Remove from Library?</h4>
+              <p className="text-sm text-gray-600 dark:text-storypad-dark-text-light">
+                This will delete your reading progress for "<strong>{story.title}</strong>".
+              </p>
+            </div>
+            <div className="flex gap-3">
               <button
                 onClick={() => {
                   onRemoveFromLibrary(story._id, story.title);
                   setShowRemoveConfirm(false);
                 }}
-                className="btn-primary text-sm bg-red-600 hover:bg-red-700"
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
               >
                 Remove
               </button>
               <button
                 onClick={() => setShowRemoveConfirm(false)}
-                className="btn-secondary text-sm"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 Cancel
               </button>

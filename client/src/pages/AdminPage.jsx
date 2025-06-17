@@ -42,7 +42,6 @@ const AdminPage = () => {
     }
 
     if (!currentUser || (!currentUser.username && !currentUser._id)) {
-      console.log('❌ No user data found');
       setLoading(false);
       return;
     }
@@ -51,21 +50,12 @@ const AdminPage = () => {
     const isAdmin = currentUser.role === 'admin' || 
                    currentUser.username === 'admin' || 
                    currentUser.email === 'admin@storypad.com';
-    
-    console.log('🔐 Admin check result:', { 
-      role: currentUser.role, 
-      username: currentUser.username, 
-      email: currentUser.email,
-      isAdmin 
-    });
 
     if (!isAdmin) {
-      console.log('❌ User is not admin');
       setLoading(false);
       return;
     }
 
-    console.log('✅ Admin access granted');
     setUser(currentUser);
     setLoading(false);
   };
