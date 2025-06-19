@@ -24,6 +24,13 @@ const LoginPage = () => {
         localStorage.setItem("token", result.token);
         localStorage.setItem('user', JSON.stringify(result.user));
         localStorage.setItem('userId', result.user?.id || result.user?._id);
+        localStorage.setItem('lastActivity', Date.now());
+        // Set session flag only if Remember Me is NOT checked
+        if (!formData.get('remember-me')) {
+          sessionStorage.setItem('activeSession', 'true');
+        } else {
+          sessionStorage.removeItem('activeSession');
+        }
         navigate("/");
       } else {
         setError(result.message || "Login failed");

@@ -16,8 +16,58 @@ import NotFound from './pages/NotFound';
 import MyLibraryPage from './pages/MyLibraryPage';
 import NoPermissionPage from './pages/NoPermissionPage';
 import Navbar from './components/Navbar';
+import { useRef, useEffect } from 'react';
 
 function App() {
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    const logout = () => {
+      localStorage.removeItem('username');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('lastActivity');
+      sessionStorage.removeItem('activeSession');
+    };
+
+    // On every activity, update lastActivity
+    const updateActivity = () => {
+      localStorage.setItem('lastActivity', Date.now());
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        logout();
+      }, 60 * 60 * 1000); // 1 hour
+    };
+
+    // On mount, check for inactivity or session flag
+    const token = localStorage.getItem('token');
+    const last = localStorage.getItem('lastActivity');
+    const activeSession = sessionStorage.getItem('activeSession');
+    if (token) {
+      // If no session flag (not Remember Me) and not first load, logout
+      if (!activeSession && last) {
+        logout();
+      } else if (last && Date.now() - Number(last) >  60 * 60* 1000) {
+        logout();
+      } else {
+        window.addEventListener('mousemove', updateActivity);
+        window.addEventListener('keydown', updateActivity);
+        window.addEventListener('mousedown', updateActivity);
+        window.addEventListener('touchstart', updateActivity);
+        updateActivity();
+      }
+    }
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      window.removeEventListener('mousemove', updateActivity);
+      window.removeEventListener('keydown', updateActivity);
+      window.removeEventListener('mousedown', updateActivity);
+      window.removeEventListener('touchstart', updateActivity);
+    };
+  }, []);
+
   return (
     <DarkModeProvider>
       <Router>
