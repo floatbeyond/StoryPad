@@ -275,21 +275,13 @@ const ReadingProgressCard = ({
           <span>{formatLastRead(progress.lastReadAt)}</span>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => onContinueReading(progress)}
-            disabled={isRemoving}
-            className="btn-primary flex-1 text-sm"
-          >
-            📖 Continue Reading
-          </button>
-          <Link
-            to={`/story/${story._id}`}
-            className="btn-secondary flex-1 text-sm text-center"
-          >
-            👁️ View Story
-          </Link>
-        </div>
+        <button
+          onClick={() => onContinueReading(progress)}
+          disabled={isRemoving}
+          className="btn-primary w-full text-sm"
+        >
+          📖 Continue Reading
+        </button>
       </div>
 
       {/* Improved confirmation modal */}

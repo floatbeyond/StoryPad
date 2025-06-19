@@ -228,7 +228,7 @@ const MyStoriesPage = () => {
                   </div>
                   <h3 className="text-xl font-medium text-gray-900 dark:text-storypad-dark-text mb-2">No stories yet</h3>
                   <p className="text-gray-600 dark:text-storypad-dark-text-light mb-6">Start your writing journey by creating your first story!</p>
-                  <Link to="/newwrite" className="btn-primary">
+                  <Link to="/write" className="btn-primary">
                     Create Your First Story
                   </Link>
                 </div>

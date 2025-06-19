@@ -274,7 +274,8 @@ const StoryPage = () => {
             className="w-full h-full object-cover"
             onError={handleImageError}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+          {/* Theme-aware gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/95 via-gray-800/70 to-gray-700/40 dark:from-black/95 dark:via-black/70 dark:to-black/40" />
         </div>
         <div className="container-custom relative -mt-40 z-10 pb-6">
           <div className="flex flex-col md:flex-row gap-6">
@@ -289,49 +290,64 @@ const StoryPage = () => {
               </div>
             </div>
 
-            <div className="w-full md:w-2/3 lg:w-3/4 text-white">
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">{story.title}</h1>
+            <div className="w-full md:w-2/3 lg:w-3/4">
+              {/* Content container with theme-aware styling */}
+              <div className="bg-white/90 dark:bg-black/60 backdrop-blur-md rounded-lg p-6 border border-gray-300/50 dark:border-white/20 shadow-xl">
+                <h1 className="text-3xl md:text-4xl font-bold mb-2 text-gray-900 dark:text-white drop-shadow-2xl">
+                  {story.title}
+                </h1>
 
-              <div className="flex items-center mb-4">
-                <div>
-                  <span className="block font-medium">by {story.author.username}</span>
-                  <span className="text-sm opacity-80">
-                    {story.chapters.length} chapters • {publishedChapters.length} published
-                  </span>
+                <div className="flex items-center mb-4">
+                  <div>
+                    <span className="block font-medium text-gray-800 dark:text-white drop-shadow-lg">
+                      by {story.author.username}
+                    </span>
+                    <span className="text-sm text-gray-600 dark:text-gray-100 drop-shadow">
+                      {story.chapters.length} chapters • {publishedChapters.length} published
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex flex-wrap gap-2 mb-4">
-                {story.category.map((tag) => (
-                  <span
-                    key={tag}
-                    className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              <p className="mb-4 text-gray-200">{story.description}</p>
-
-              <div className="flex space-x-4 text-sm">
-                <div className="flex items-center">
-                  <span className="mr-1">👁️</span>
-                  {story.views || 0} Views
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {story.category.map((tag) => (
+                    <span
+                      key={tag}
+                      className="bg-blue-600/95 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full border border-blue-500/50 dark:border-blue-300/30 shadow-lg font-medium"
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
-                <div className="flex items-center">
-                  <span className="mr-1">🌐</span>
-                  {story.language}
-                </div>
-                <div className="flex items-center ml-4">
-                  <button
-                    onClick={handleLike}
-                    className={`flex items-center px-2 py-1 rounded ${liked ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'} hover:bg-red-200 transition`}
-                    title={liked ? 'Unlike' : 'Like'}
-                  >
-                    <span style={{fontSize: '1.2em', marginRight: 4}}>{liked ? '❤️' : '🤍'}</span>
-                    <span>{likes} Like{likes !== 1 ? 's' : ''}</span>
-                  </button>
+
+                <p className="mb-4 text-gray-700 dark:text-gray-50 drop-shadow-lg leading-relaxed">
+                  {story.description}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-700 dark:text-gray-50">
+                  <div className="flex items-center bg-gray-200/60 dark:bg-black/40 backdrop-blur-sm px-3 py-2 rounded-full border border-gray-300/50 dark:border-white/20 shadow-md">
+                    <span className="mr-2 text-base">👁️</span>
+                    <span className="font-medium">{story.views || 0} Views</span>
+                  </div>
+                  <div className="flex items-center bg-gray-200/60 dark:bg-black/40 backdrop-blur-sm px-3 py-2 rounded-full border border-gray-300/50 dark:border-white/20 shadow-md">
+                    <span className="mr-2 text-base">🌐</span>
+                    <span className="font-medium">{story.language}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <button
+                      onClick={handleLike}
+                      className={`flex items-center px-4 py-2 rounded-lg backdrop-blur-sm border transition-all shadow-lg font-medium ${
+                        liked 
+                          ? 'bg-red-600/95 text-white border-red-300/50 hover:bg-red-700/95 shadow-red-500/25' 
+                          : 'bg-gray-200/60 dark:bg-white/25 text-gray-800 dark:text-white border-gray-300/50 dark:border-white/40 hover:bg-gray-300/60 dark:hover:bg-white/35'
+                      }`}
+                      title={liked ? 'Unlike' : 'Like'}
+                    >
+                      <span className={`text-lg mr-2 ${liked ? 'filter drop-shadow-md' : ''}`}>
+                        {liked ? '❤️' : '🤍'}
+                      </span>
+                      <span>{likes} Like{likes !== 1 ? 's' : ''}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -187,9 +187,21 @@ router.put('/profile', authenticateToken, async (req, res) => {
 // Update profile picture
 router.put('/profile-picture', authenticateToken, upload.single('profilePicture'), async (req, res) => {
   try {
+    console.log('📸 Profile picture upload request:', {
+      file: req.file ? 'File received' : 'No file',
+      userId: req.user.id
+    });
+
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No image file provided' });
     }
+
+    console.log('📁 File details:', {
+      filename: req.file.filename,
+      path: req.file.path,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    });
 
     // Upload to Cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
@@ -202,6 +214,11 @@ router.put('/profile-picture', authenticateToken, upload.single('profilePicture'
       ]
     });
 
+    console.log('☁️ Cloudinary upload result:', {
+      public_id: result.public_id,
+      secure_url: result.secure_url
+    });
+
     // Update user profile picture
     const user = await User.findByIdAndUpdate(
       req.user.id,
@@ -210,7 +227,14 @@ router.put('/profile-picture', authenticateToken, upload.single('profilePicture'
     ).select('-password');
 
     // Clean up temp file
-    fs.unlinkSync(req.file.path);
+    try {
+      if (req.file && req.file.path) {
+        fs.unlinkSync(req.file.path);
+        console.log('🗑️ Temp file cleaned up');
+      }
+    } catch (cleanupError) {
+      console.warn('⚠️ Failed to cleanup temp file:', cleanupError.message);
+    }
 
     res.json({
       success: true,
@@ -219,8 +243,38 @@ router.put('/profile-picture', authenticateToken, upload.single('profilePicture'
       user
     });
   } catch (error) {
-    console.error('Profile picture upload error:', error);
-    res.status(500).json({ success: false, message: 'Failed to upload profile picture' });
+    console.error('❌ Profile picture upload error:', error);
+    
+    // Clean up temp file on error
+    try {
+      if (req.file && req.file.path) {
+        fs.unlinkSync(req.file.path);
+        console.log('🗑️ Temp file cleaned up after error');
+      }
+    } catch (cleanupError) {
+      console.warn('⚠️ Failed to cleanup temp file after error:', cleanupError.message);
+    }
+
+    // Return more specific error messages
+    if (error.code === 'ENOENT') {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'File upload failed - file not found' 
+      });
+    }
+    
+    if (error.http_code) {
+      return res.status(500).json({ 
+        success: false, 
+        message: `Cloudinary error: ${error.message}` 
+      });
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to upload profile picture',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

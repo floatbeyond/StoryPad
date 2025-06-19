@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BackButton from '../components/BackButton';
 import ConfirmationModal from '../components/ConfirmationModal';
+import ImageCropper from '../components/ImageCropper';
 import { handleImageError } from '../utils/imageUtils.jsx';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -52,6 +53,8 @@ const ProfilePage = () => {
   // Profile picture upload
   const [uploadingPicture, setUploadingPicture] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showImageCropper, setShowImageCropper] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState(null);
 
   // Add invitations state
   const [invitations, setInvitations] = useState([]);
@@ -146,7 +149,7 @@ const ProfilePage = () => {
     }
   };
 
-  const handleProfilePictureUpload = async (e) => {
+  const handleProfilePictureSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -160,10 +163,20 @@ const ProfilePage = () => {
       return;
     }
 
+    // Create image URL for cropper
+    const imageUrl = URL.createObjectURL(file);
+    setSelectedImageSrc(imageUrl);
+    setShowImageCropper(true);
+  };
+
+  const handleCropComplete = async (croppedBlob) => {
+    setShowImageCropper(false);
+    setSelectedImageSrc(null);
     setUploadingPicture(true);
+
     try {
       const formData = new FormData();
-      formData.append('profilePicture', file);
+      formData.append('profilePicture', croppedBlob, 'profile.jpg');
 
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/api/user/profile-picture`, {
@@ -186,6 +199,14 @@ const ProfilePage = () => {
       setError('Failed to upload profile picture');
     } finally {
       setUploadingPicture(false);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowImageCropper(false);
+    if (selectedImageSrc) {
+      URL.revokeObjectURL(selectedImageSrc);
+      setSelectedImageSrc(null);
     }
   };
 
@@ -356,7 +377,7 @@ const ProfilePage = () => {
                     type="file"
                     className="hidden"
                     accept="image/*"
-                    onChange={handleProfilePictureUpload}
+                    onChange={handleProfilePictureSelect}
                     disabled={uploadingPicture}
                   />
                 </label>
@@ -919,6 +940,16 @@ const ProfilePage = () => {
           )}
         </div>
       </div>
+
+      {/* Image Cropper Modal */}
+      {showImageCropper && selectedImageSrc && (
+        <ImageCropper
+          imageSrc={selectedImageSrc}
+          onCrop={handleCropComplete}
+          onCancel={handleCropCancel}
+          aspectRatio={1} // Square crop for profile pictures
+        />
+      )}
 
       {/* Delete Account Confirmation Modal */}
       {showDeleteConfirm && (
