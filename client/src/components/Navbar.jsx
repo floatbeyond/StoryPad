@@ -81,8 +81,8 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-8">
             <Link to="/browse" className="text-storypad-text dark:text-storypad-dark-text hover:text-storypad-primary dark:hover:text-storypad-dark-primary transition-colors">Browse</Link>
-            <Link to="/library" className="text-storypad-text dark:text-storypad-dark-text hover:text-storypad-primary dark:hover:text-storypad-dark-primary transition-colors flex items-center gap-1">My Library</Link>
-            <Link to="/mystories" className="text-storypad-text dark:text-storypad-dark-text hover:text-storypad-primary dark:hover:text-storypad-dark-primary transition-colors">My Stories</Link>
+            <Link to="/my-library" className="text-storypad-text dark:text-storypad-dark-text hover:text-storypad-primary dark:hover:text-storypad-dark-primary transition-colors flex items-center gap-1">My Library</Link>
+            <Link to="/my-stories" className="text-storypad-text dark:text-storypad-dark-text hover:text-storypad-primary dark:hover:text-storypad-dark-primary transition-colors">My Stories</Link>
           </div>
 
           {/* Desktop Auth/Profile Buttons */}
@@ -207,8 +207,8 @@ const Navbar = () => {
           <div className="md:hidden mt-2 pb-4">
             <div className="flex flex-col space-y-3">
               <Link to="/browse" className="text-storypad-text dark:text-storypad-dark-text hover:text-storypad-primary dark:hover:text-storypad-dark-primary py-2" onClick={() => setIsMenuOpen(false)}>Browse</Link>
-              <Link to="/mystories" className="text-storypad-text dark:text-storypad-dark-text hover:text-storypad-primary dark:hover:text-storypad-dark-primary py-2" onClick={() => setIsMenuOpen(false)}>My Stories</Link>
-              <Link to="/library" className="text-storypad-text dark:text-storypad-dark-text hover:text-storypad-primary dark:hover:text-storypad-dark-primary py-2" onClick={() => setIsMenuOpen(false)}>My Library</Link>
+              <Link to="/my-stories" className="text-storypad-text dark:text-storypad-dark-text hover:text-storypad-primary dark:hover:text-storypad-dark-primary py-2" onClick={() => setIsMenuOpen(false)}>My Stories</Link>
+              <Link to="/my-library" className="text-storypad-text dark:text-storypad-dark-text hover:text-storypad-primary dark:hover:text-storypad-dark-primary py-2" onClick={() => setIsMenuOpen(false)}>My Library</Link>
 
               <div className="flex flex-col space-y-2 mt-4">
                 {username ? (

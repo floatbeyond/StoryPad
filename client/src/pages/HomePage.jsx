@@ -7,7 +7,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const isLoggedIn = !!localStorage.getItem("token");
   const [stories, setStories] = useState([]);
   const [featuredStories, setFeaturedStories] = useState([]);
   const [popularStories, setPopularStories] = useState([]);
@@ -16,11 +15,7 @@ const HomePage = () => {
   const [showOptions, setShowOptions] = useState(false);
 
   const handleStartWriting = () => {
-    if (!isLoggedIn) {
-      navigate("/signup");
-    } else {
-      setShowOptions(true);
-    }
+    navigate("/write");
   };
 
   useEffect(() => {
@@ -87,7 +82,7 @@ if (data.success) {
               <button className="btn-primary" onClick={() => navigate("/write")}>
                 Start a new story
               </button>
-              <button className="btn-secondary" onClick={() => navigate("/mystories")}>
+              <button className="btn-secondary" onClick={() => navigate("/my-stories")}>
                 My stories
               </button>
               <button className="text-red-500 mt-2" onClick={() => setShowOptions(false)}>

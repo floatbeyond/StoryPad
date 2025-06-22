@@ -1,63 +1,75 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import MainLayout from './layouts/MainLayout';
+import AuthPrompt from './components/AuthPrompt';
+import SessionStatus from './components/SessionStatus';
+import SessionDebug from './components/SessionDebug';
+import ProtectedRoute from './components/ProtectedRoute';
+
+// Import your pages
 import HomePage from './pages/HomePage';
-import StoryPage from './pages/StoryPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import BrowsePage from './pages/BrowsePage';
+import StoryPage from './pages/StoryPage';
+import WritePage from './pages/WritePage';
+import ProfilePage from './pages/ProfilePage';
+import MyLibraryPage from './pages/MyLibraryPage';
 import NewWritePage from './pages/NewWritePage';
 import MyStoriesPage from './pages/MyStoriesPage';
-import ProfilePage from './pages/ProfilePage';
-import WritePage from './pages/WritePage';
-import InvitationsPage from './pages/InvitationsPage';
-import AdminPage from './pages/AdminPage';
-import NotFound from './pages/NotFound';
-import MyLibraryPage from './pages/MyLibraryPage';
-import NoPermissionPage from './pages/NoPermissionPage';
-import Navbar from './components/Navbar';
 
 function App() {
   return (
-    <DarkModeProvider>
-      <Router>
-        <div className="min-h-screen bg-storypad-background dark:bg-storypad-dark-bg transition-colors">
+    <Router>
+      <DarkModeProvider>
+        <div className="App">
           <Routes>
-            {/* Auth Pages (with standalone navbar) */}
-            <Route path="/login" element={
-              <>
-                <Navbar />
-                <LoginPage />
-              </>
-            } />
-            <Route path="/signup" element={
-              <>
-                <Navbar />
-                <SignupPage />
-              </>
-            } />
-
-            {/* Main Layout Pages (MainLayout includes navbar) */}
-            <Route element={<MainLayout />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/browse" element={<BrowsePage />} />
-              <Route path="/invitations" element={<InvitationsPage />} />
-              <Route path="/write" element={<NewWritePage />} />
-              <Route path="/mystories" element={<MyStoriesPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/write/:id" element={<WritePage />} />
-              <Route path="/story/:id/edit" element={<WritePage />} />
-              <Route path="/story/:id" element={<StoryPage />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/library" element={<MyLibraryPage />} />
-              <Route path="/no-permission" element={<NoPermissionPage />} />
-              {/* Catch-all for 404 Not Found */}
-              <Route path="*" element={<NotFound />} />
+            {/* Routes with MainLayout (includes Navbar) */}
+            <Route path="/" element={<MainLayout />}>
+              {/* Public routes */}
+              <Route index element={<HomePage />} />
+              <Route path="browse" element={<BrowsePage />} />
+              <Route path="story/:id" element={<StoryPage />} />
+              
+              {/* Protected routes */}
+              <Route path="write" element={
+                <ProtectedRoute>
+                  <NewWritePage />
+                </ProtectedRoute>
+              } />
+              <Route path="story/:id/edit" element={
+                <ProtectedRoute>
+                  <WritePage />
+                </ProtectedRoute>
+              } />
+              <Route path="profile" element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } />
+              <Route path="my-library" element={
+                <ProtectedRoute>
+                  <MyLibraryPage />
+                </ProtectedRoute>
+              } />
+              <Route path="my-stories" element={
+                <ProtectedRoute>
+                  <MyStoriesPage />
+                </ProtectedRoute>
+              } />
             </Route>
+
+            {/* Routes without MainLayout (no navbar) */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
           </Routes>
+          
+          {/* Global Components */}
+          <AuthPrompt />
+          {process.env.NODE_ENV === 'development' && <SessionDebug />}
         </div>
-      </Router>
-    </DarkModeProvider>
+      </DarkModeProvider>
+    </Router>
   );
 }
 

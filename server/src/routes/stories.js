@@ -439,10 +439,11 @@ router.get('/:id/collaborators', authenticateToken, async (req, res) => {
       });
     }
 
-    // Check if user has access (owner or collaborator)
-    const isOwner = story.author.toString() === req.user.id;
-    const isCollaborator = story.collaborators.some(
-      collab => collab.user.id.toString() === req.user.id
+    // Check if user has access
+    const userId = req.user.id;
+    const isOwner = story.author.toString() === userId;
+    const isCollaborator = story.collaborators?.some(
+      collab => collab.user._id.toString() === userId
     );
 
     if (!isOwner && !isCollaborator) {
@@ -452,10 +453,15 @@ router.get('/:id/collaborators', authenticateToken, async (req, res) => {
       });
     }
 
+    // Filter pending invitations to only include those with 'pending' status
+    const pendingInvitations = story.pendingInvitations.filter(
+      inv => inv.status === 'pending'
+    );
+
     res.json({
       success: true,
       collaborators: story.collaborators || [],
-      pendingInvitations: story.pendingInvitations || []
+      pendingInvitations: pendingInvitations
     });
 
   } catch (error) {

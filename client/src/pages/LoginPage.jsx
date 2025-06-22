@@ -1,35 +1,37 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { authManager } from "../utils/auth";
 
 const LoginPage = () => {
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError(null);
+    setLoading(true);
+
     const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
+    const credentials = Object.fromEntries(formData.entries());
+    
+    // Properly convert checkbox to boolean - check for 'on' value or existence
+    credentials.rememberMe = formData.has('remember-me') && formData.get('remember-me') === 'on';
+    
+    console.log('Login credentials:', credentials); // Debug log
+
     try {
-      const response = await fetch(`${API_BASE_URL}/api/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      const result = await response.json();
-      if (response.ok) {
-        localStorage.setItem("username", result.user.username);
-        localStorage.setItem("token", result.token);
-        localStorage.setItem('user', JSON.stringify(result.user));
-        localStorage.setItem('userId', result.user?.id || result.user?._id);
+      const result = await authManager.login(credentials);
+      
+      if (result.success) {
         navigate("/");
       } else {
         setError(result.message || "Login failed");
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,7 +41,10 @@ const LoginPage = () => {
         <div className="text-center mb-6">
           <Link to="/" className="inline-block">
             <span className="text-3xl font-bold text-storypad-primary dark:text-storypad-dark-primary">
-              Story<span className="text-storypad-accent dark:text-storypad-dark-accent">Pad</span>
+              Story
+              <span className="text-storypad-accent dark:text-storypad-dark-accent">
+                Pad
+              </span>
             </span>
           </Link>
           <h2 className="mt-4 text-2xl font-bold text-storypad-dark dark:text-storypad-dark-text">
@@ -99,6 +104,7 @@ const LoginPage = () => {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
+                value="on"
                 className="h-4 w-4 border-gray-300 dark:border-gray-600 rounded text-storypad-primary dark:text-storypad-dark-primary focus:ring-storypad-primary dark:focus:ring-storypad-dark-primary bg-white dark:bg-storypad-dark-bg"
               />
               <label
@@ -122,8 +128,12 @@ const LoginPage = () => {
           {error && <p className="text-red-500">{error}</p>}
 
           <div>
-            <button type="submit" className="btn-primary w-full py-3">
-              Sign in
+            <button
+              type="submit"
+              className="btn-primary w-full py-3"
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </div>
         </form>

@@ -21,7 +21,12 @@ const userSchema = new mongoose.Schema({
   collaborationSettings: {
     allowInvitations: { type: Boolean, default: true },
     emailNotifications: { type: Boolean, default: true }
-  }
+  },
+  // Session management fields
+  refreshToken: String,
+  sessionStart: Date,
+  maxSessionDuration: String,
+  lastLogin: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 export const User = mongoose.model('User', userSchema);
