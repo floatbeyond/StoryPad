@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import MainLayout from './layouts/MainLayout';
 import AuthPrompt from './components/AuthPrompt';
-import SessionStatus from './components/SessionStatus';
 import SessionDebug from './components/SessionDebug';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -17,6 +16,7 @@ import ProfilePage from './pages/ProfilePage';
 import MyLibraryPage from './pages/MyLibraryPage';
 import NewWritePage from './pages/NewWritePage';
 import MyStoriesPage from './pages/MyStoriesPage';
+import InvitationsPage from './pages/InvitationsPage';
 
 function App() {
   return (
@@ -55,6 +55,11 @@ function App() {
               <Route path="my-stories" element={
                 <ProtectedRoute>
                   <MyStoriesPage />
+                </ProtectedRoute>
+              } />
+              <Route path="invitations" element={
+                <ProtectedRoute>
+                  <InvitationsPage />
                 </ProtectedRoute>
               } />
             </Route>
